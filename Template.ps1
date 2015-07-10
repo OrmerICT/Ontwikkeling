@@ -10,7 +10,7 @@ param (
     [string]$TDNumber
 )
     
-. .\Olaf.ps1
+. .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
 $procname = $MyInvocation.Scriptname.Split(“\”)[2]
