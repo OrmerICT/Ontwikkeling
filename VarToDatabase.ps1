@@ -44,15 +44,15 @@ param (
       $Split = $Line -split '\[' -replace '\]'
 
       $var = New-Object -TypeName PSObject -Property @{
-        'Date' = $split[0]
-        'Time' = $Split[1]
-        'Operator' = $Split[2]
-        'Domain' = $Split[3]
-        'MachineName' = $Split[4]
-        'Customer' = $Split[5]
-        'TDNumber' = $Split[6]
-        'Status' = $Split[7]
-        'Message' = $Split[8]
+        'Date' = $split[1]
+        'Time' = $Split[2]
+        'Operator' = $Split[3]
+        'Domain' = $Split[4]
+        'MachineName' = $Split[5]
+        'Customer' = $Split[6]
+        'TDNumber' = $Split[7]
+        'Status' = $Split[8]
+        'Message' = $Split[9]
 
          } # end split record to Var
 
