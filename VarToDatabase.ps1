@@ -3,7 +3,7 @@ param (
          [parameter(
             Mandatory=$False,
             Position=1
-            ) ][string[]]$LogVariable
+            ) ][string[]]$LogFilePath = "C:\kworking\ProcedureLog.log"
       )
   #region Begin
     $ServerInstance = 'tcp:hljcmewuql.database.windows.net,1433'
@@ -38,8 +38,8 @@ param (
 
           } # End Catch
 
-
-    foreach ($Line in $Logvariable) { 
+    $LogFile = Get-Content $LogFilePath
+    foreach ($Line in $LogFile) { 
 
       $Split = $Line -split '\[' -replace '\]'
 
