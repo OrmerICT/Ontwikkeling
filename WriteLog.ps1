@@ -6,9 +6,11 @@
         [parameter(mandatory=$true)][validateset('Start','Error','Success','Failure','Info')]
         [string]$Status,
         [Parameter(Mandatory=$False)]
-        [string]$Message
+        [string]$Message,
+        [parameter(mandatory=$true)]
+        [string]$LogDir
     )
-    $LogFile="C:\kworking\ProcedureLog.log"
+    $LogFile= "$($LogDir)\ProcedureLog.log"
     try 
     {
         $DateTime = Get-Date -Format 'yyyy-MM-dd hh:mm:ss'
