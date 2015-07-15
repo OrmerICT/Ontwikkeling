@@ -3,9 +3,10 @@ param (
          [parameter(
             Mandatory=$False,
             Position=1
-            ) ][string[]]$LogFilePath = "C:\kworking\ProcedureLog.log"
+            ) ][string[]]$LogFile
       )
   #region Begin
+    $LogFilePath = "C:\kworking\ProcedureLog.log"
     $ServerInstance = 'tcp:hljcmewuql.database.windows.net,1433'
     $Database = 'Temp'
     $UserName = 'OrmerDB@hljcmewuql'
@@ -38,7 +39,7 @@ param (
 
           } # End Catch
 
-    $LogFile = Get-Content $LogFilePath
+    $LogFile = Get-Content -Path $LogFilePath
     foreach ($Line in $LogFile) { 
 
       $Split = $Line -split '\[' -replace '\]'
@@ -51,13 +52,14 @@ param (
         'MachineName' = $Split[5]
         'Customer' = $Split[6]
         'TDNumber' = $Split[7]
-        'Status' = $Split[8]
-        'Message' = $Split[9]
+        'Procname' = $Split[8]
+        'Status' = $Split[9]
+        'Message' = $Split[10]
 
          } # end split record to Var
 
         $Query = "insert into Logging 
-                  (Date,Time,Operator,Domain,MachineName,Customer,TDNumber,Status,Message) 
+                  (Date,Time,Operator,Domain,MachineName,Customer,TDNumber,Procname,Status,Message) 
                   values ('$($Var.Date)',
                           '$($Var.Time)',
                           '$($Var.Operator)',
@@ -65,6 +67,7 @@ param (
                           '$($Var.MachineName)',
                           '$($Var.Customer)',
                           '$($Var.TDNumber)',
+                          '$($Var.Procname)',
                           '$($Var.Status)',  
                           '$($Var.Message)'
                          )"
