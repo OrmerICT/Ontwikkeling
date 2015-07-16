@@ -28,7 +28,8 @@ Set-Location $KworkingDir
 . .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
-$procname = $MyInvocation.Scriptname.Split(“\”)[2]
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
 $Customer = $MachineGroep.Split(“.”)[2]
 
 #region Object
