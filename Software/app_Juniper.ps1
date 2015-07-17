@@ -44,12 +44,12 @@ $CheckApp = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\Curren
     else {
         f_New-Log -logvar $logvar -status 'Info' -Message 'Juniper Networks Setup Client Activex Control not found' -LogDir $KworkingDir
         Start-Process -FilePath ".\JuniperSetupClientInstaller\JuniperSetupClientOCX.exe" -WorkingDirectory $KworkingDir -Wait
-        Start-Process -FilePath ".\JuniperSetupClientInstaller\JuniperSetupClientOCX64.exe" -Wait
-        f_New-Log -logvar $logvar -status 'Info' -Message 'Google Chrome installed successfully' -LogDir $KworkingDir
+        Start-Process -FilePath ".\JuniperSetupClientInstaller\JuniperSetupClientOCX64.exe" -WorkingDirectory $KworkingDir -Wait
+        f_New-Log -logvar $logvar -status 'Info' -Message 'JuniperSetupClientInstaller installed successfully' -LogDir $KworkingDir
         }
     
 f_New-Log -logvar $logvar -status 'Info' -Message "Remove JuniperSetupClientInstaller install directory" -LogDir $KworkingDir
-Remove-Item “.\JuniperSetupClientInstaller” -recurse -force
+Remove-Item “.\JuniperSetupClientInstaller” -Recurse -force
 f_New-Log -logvar $logvar -status 'Success' -Message "END $procname" -LogDir $KworkingDir
 
 #endregion Execution
