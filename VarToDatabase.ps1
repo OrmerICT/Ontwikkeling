@@ -3,9 +3,10 @@ param (
          [parameter(
             Mandatory=$False,
             Position=1
-            ) ][string[]]$LogVariable
+            ) ][string[]]$LogFile
       )
   #region Begin
+    $LogFilePath = "C:\kworking\ProcedureLog.log"
     $ServerInstance = 'tcp:hljcmewuql.database.windows.net,1433'
     $Database = 'Temp'
     $UserName = 'OrmerDB@hljcmewuql'
@@ -38,26 +39,27 @@ param (
 
           } # End Catch
 
-
-    foreach ($Line in $Logvariable) { 
+    $LogFile = Get-Content -Path $LogFilePath
+    foreach ($Line in $LogFile) { 
 
       $Split = $Line -split '\[' -replace '\]'
 
       $var = New-Object -TypeName PSObject -Property @{
-        'Date' = $split[0]
-        'Time' = $Split[1]
-        'Operator' = $Split[2]
-        'Domain' = $Split[3]
-        'MachineName' = $Split[4]
-        'Customer' = $Split[5]
-        'TDNumber' = $Split[6]
-        'Status' = $Split[7]
-        'Message' = $Split[8]
+        'Date' = $split[1]
+        'Time' = $Split[2]
+        'Operator' = $Split[3]
+        'Domain' = $Split[4]
+        'MachineName' = $Split[5]
+        'Customer' = $Split[6]
+        'TDNumber' = $Split[7]
+        'Procname' = $Split[8]
+        'Status' = $Split[9]
+        'Message' = $Split[10]
 
          } # end split record to Var
 
         $Query = "insert into Logging 
-                  (Date,Time,Operator,Domain,MachineName,Customer,TDNumber,Status,Message) 
+                  (Date,Time,Operator,Domain,MachineName,Customer,TDNumber,Procname,Status,Message) 
                   values ('$($Var.Date)',
                           '$($Var.Time)',
                           '$($Var.Operator)',
@@ -65,6 +67,7 @@ param (
                           '$($Var.MachineName)',
                           '$($Var.Customer)',
                           '$($Var.TDNumber)',
+                          '$($Var.Procname)',
                           '$($Var.Status)',  
                           '$($Var.Message)'
                          )"

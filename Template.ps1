@@ -7,8 +7,13 @@ param (
     [string]$MachineGroep,
 
     [parameter(mandatory=$false)]
-    [string]$TDNumber
+    [string]$TDNumber,
+
+    [parameter(mandatory=$true)]
+    [string]$KworkingDir
 )
+
+Set-Location $KworkingDir
     
 . .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
@@ -28,6 +33,6 @@ $logvar = New-Object -TypeName PSObject -Property @{
 #endregion Object
     
 #region Execution
-f_New-Log -logvar $logvar -status 'Error' -Message 'Helo world'
+f_New-Log -logvar $logvar -status 'Error' -Message 'Hello world' -LogDir $KworkingDir
     
 #endregion Execution
