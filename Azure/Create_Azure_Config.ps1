@@ -26,6 +26,11 @@ $VerbosePreference = "Continue"
 . .\f_LogonTest.ps1
 . .\f_Create-AzurevNetCfgFile.ps1
 . .\f_Update-AzurevNetConfig.ps1
+. .\f_Add-DcDataDrive.ps1
+. .\f_CreateFirstDC.ps1
+. .\f_Create-VmPsSession.ps1
+. .\f_Import-VMWinRmCert.ps1
+
 
 #endregion
 
@@ -281,7 +286,7 @@ Do {
 
     Switch ($Servertype) {
 
-        DC{
+        *DC-01{
           Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
           Write-Verbose "f_CreateAzureServer"
           Write-Verbose "   -CustomerId $CustomerId"
