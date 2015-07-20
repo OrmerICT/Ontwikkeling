@@ -34,7 +34,7 @@ $logvar = New-Object -TypeName PSObject -Property @{
 }
 
 remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
-
+f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: `'$Kworking`' Script"
 #endregion StandardFramework
     
 #region Execution

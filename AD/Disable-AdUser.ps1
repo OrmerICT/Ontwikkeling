@@ -1,27 +1,27 @@
 ﻿#region Comments
-###############################################################################
-#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
 <###############################################################################
+#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
+###############################################################################
 
 #******************************************************************************
-# File:     Unlock-AdUser-v1.1.ps1
-# Date:     07/16/2015
-# Version:  1.0
+# File:     Disable-AdUser-v1.1.ps1
+# Date:     07/17/2015
+# Version:  1.1
 #
 # Purpose:  PowerShell script to clean Temp folders.
 #
-# Usage:    Unlock-AdUser-v1.1.ps1
+# Usage:    Disable-AdUser-v1.1.ps1
 # Needed: Remote administration tools to load the server manager
 #
 # Copyright (C) 2015 Ormer ICT 
-# http://www.informit.com/articles/article.aspx?p=729101&seqNum=5
-# http://bobausmus.blogspot.nl/2013/10/powershell-module-and-snapin-checks.html
+# 
+# 
 #
 # Revisions:
 # ----------
 # 1.0.0   07/16/2015   Created script.
 # 1.1.0   07/17/2015   Error logging aangepast By PvdW
-# 1.2.0   07/17/2015   Error logging aangepast By PvdW
+# 1.2.0   
 #>#******************************************************************************
 #endregion Comments
 
@@ -42,9 +42,6 @@ param (
 	# Procedure vars
     [Parameter(Mandatory=$false)]
     [String] $UserName,
-                
-    [Parameter(Mandatory=$false)]
-    [String] $PassWord,
 
     [Parameter(Mandatory=$false)]
     [String] $Domain = $env:USERDOMAIN
@@ -83,59 +80,40 @@ f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: 
     else {
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "servermanager PowerShell module is Already loaded" 
         }
- #endregion Load module Server manager
+#endregion Load module Server manager
 
 #region Install RSAT-AD-PowerShell
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Check if RSAT-AD-PowerShell is installed"
-$RSAT = (Get-WindowsFeature -name RSAT-AD-PowerShell).Installed 
+    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Check if RSAT-AD-PowerShell is installed"
+    $RSAT = (Get-WindowsFeature -name RSAT-AD-PowerShell).Installed 
 
-If ($RSAT -eq $false)
-{
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "RSAT-AD-PowerShell not found: `'$($RSAT)`'"
+    If ($RSAT -eq $false) {
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "RSAT-AD-PowerShell not found: `'$($RSAT)`'"
 
-Add-WindowsFeature RSAT-AD-PowerShell
-f_New-Log -logvar $logvar -status 'start' -LogDir $KworkingDir -Message "Add Windows Feature RSAT-AD-PowerShell"
+        Add-WindowsFeature RSAT-AD-PowerShell
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Windows Feature RSAT-AD-PowerShell"
 
-Import-module ActiveDirectory
-f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Import module ActiveDirectory"
-}
-Else
-{
-f_New-Log -logvar $logvar -status 'start' -LogDir $KworkingDir -Message "Windows Feature RSAT-AD-PowerShell installed"
-}
+        Import-module ActiveDirectory
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Import module ActiveDirectory"
+        }
+    Else {
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Windows Feature RSAT-AD-PowerShell installed"
+        }
 #endregion Install RSAT-AD-PowerShell
 
-#Import Module Active Directory
-if ((get-module -name ActiveDirectory -ErrorAction SilentlyContinue | foreach { $_.Name }) -ne "ActiveDirectory")
-{
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Adding ActiveDirectory PowerShell module" 
-import-module ActiveDirectory
-}
-else
-{
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "ActiveDirectory PowerShell module is Already loaded" 
-}
-
-#Check if user is disabled
-$UserEnabled = (Get-ADUser -Identity $UserName).Enabled
-If ($UserEnabled -eq $false)
-{
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "User is disabled. Please contact the manager: `'$($UserEnabled)`'"
-exit
-}
-else
-{
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "User is enabled: `'$($UserName)`'"
-}
-
-#Unlock Account
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Unlock user account: `'$($UserName)`'"
-Unlock-ADAccount -Identity $UserName
+#region Import Module Active Directory
+    if ((get-module -name ActiveDirectory -ErrorAction SilentlyContinue | foreach { $_.Name }) -ne "ActiveDirectory") {
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Adding ActiveDirectory PowerShell module" 
+        import-module ActiveDirectory
+        }
+    else {
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "ActiveDirectory PowerShell module is Already loaded"
+        }
+#endregion Import Module Active Directory
 
 
- 
-#endregion Execution
+#region Disable Account
+    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Disable user account: `'$($UserName)`'"
+    Disable-ADAccount -Identity $UserName
+#endregion Disable Account
 
-
-
-
+f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Title: END `'$Kworking`' Script"

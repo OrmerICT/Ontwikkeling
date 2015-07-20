@@ -1,0 +1,390 @@
+﻿#Define and validate mandatory parameters
+[CmdletBinding()]
+
+Param(
+      #CustomerName
+      [parameter(Mandatory=$False)]
+      [ValidateNotNullOrEmpty()]
+      [String] $ExcelFile = "C:\Users\Raymond\Documents\GitHub\Temp\Azureconfig.xlsx"
+)
+
+#region Init
+
+#Set strict mode to identify typographical errors
+Set-StrictMode -Version Latest
+
+#Let's make the script verbose by default
+$VerbosePreference = "Continue"
+
+#endregion
+
+#region includes
+####################
+## Includes
+####################
+
+. .\f_LogonTest.ps1
+. .\f_Create-AzurevNetCfgFile.ps1
+. .\f_Update-AzurevNetConfig.ps1
+
+#endregion
+
+####################
+## MAIN SCRIPT BODY
+####################
+
+#region Open Excel
+##############################
+#Stage 0 - Open Excel 
+##############################
+
+
+
+
+
+
+#Check for Excel inputfile
+Write-Verbose "$(Get-Date -f T) - Check if config xlsx exists"
+
+If (Test-Path $Excelfile){
+  Write-Verbose "$(Get-Date -f T) - config xlsx found: $Excelfile"
+}
+Else{
+  Write-Verbose "$(Get-Date -f T) - config xlsx not found: $Excelfile"
+  Exit
+}
+
+# Create Excel object
+$objExcel=New-Object -ComObject Excel.Application
+$objExcel.Visible=$false
+$WorkBook=$objExcel.Workbooks.Open($ExcelFile)
+$worksheet = $workbook.sheets.item("AzureConfig")
+
+#endregion 
+
+#region Param
+##############################
+#Stage 0 - Param
+##############################cls
+
+<# Available locations
+
+    East Asia
+    Southeast Asia
+    North Europe
+    West Europe
+    Central US
+    East US 2
+    East US
+    West US
+    South Central US
+
+#>
+
+$AzureCredentialName = "TST-AutomationAccount@managedservicesormer.onmicrosoft.com"
+$password = "AutoMaat2015!"
+$AzureSubscriptionName = "Azure in Open"
+$Log = "D:\Azure\Scripts\Azure.log"
+$Location = "West Europe"
+$AdminUser = "ormeradmin"
+$AdminPassword = "Welkom2015!"
+$CustomerName = $Worksheet.cells.item(3,2).text      # customername
+$Domain = $Worksheet.cells.item(4,2).text             # Domain
+$SubnetNumber = $Worksheet.cells.item(5,2).text       # Subnet
+
+$CustomerId = $CustomerName.tolower().substring(0,4)
+$Suffix = "-67637"
+$SuffixStorage = "67637"
+$StorageAccountName = $CustomerId + "01storage" + $SuffixStorage
+$DNSServerName = $CustomerId.ToUpper() + "-DC-01"
+$vNetName = $CustomerId.ToUpper() + "-VNET-01"
+$SubnetName = $CustomerId.ToUpper() + "-SUBNET-01"
+$ForestFqdn= $Domain + ".local"
+
+Write-Verbose "$(Get-Date -f T) - AzureCredentialName: [$AzureCredentialName]"
+Write-Verbose "$(Get-Date -f T) - AzureSubscriptionName: [$AzureSubscriptionName]"
+Write-Verbose "$(Get-Date -f T) - Log: [$Log]"
+Write-Verbose "$(Get-Date -f T) - Location: [$Location]"
+Write-Verbose "$(Get-Date -f T) - Customernaam: [$CustomerName]"
+Write-Verbose "$(Get-Date -f T) - AdminUser: [$AdminUser]"
+Write-Verbose "$(Get-Date -f T) - Domain: [$Domain]"
+Write-Verbose "$(Get-Date -f T) - CustomerID: [$CustomerId]"
+Write-Verbose "$(Get-Date -f T) - StorageAccountName: [$StorageAccountName]"
+Write-Verbose "$(Get-Date -f T) - DNSServername: [$DNSServername]"
+Write-Verbose "$(Get-Date -f T) - vNetname: [$vNetName]"
+Write-Verbose "$(Get-Date -f T) - Subnet: [$SubnetName]"
+Write-Verbose "$(Get-Date -f T) - SubnetNumber: [10.10.$SubnetNumber.0]"
+Write-Verbose "$(Get-Date -f T) - ForestFqdn: $ForestFqdn"
+
+#endregion 
+
+#region Logon
+##############################
+#Stage 1 - Loop Excel sheet
+##############################
+
+$i = 8 
+
+#
+#Stage 1 - Check Connectivity
+#
+Write-Verbose "$(Get-Date -f T) - Logon Azure"
+
+If ($Worksheet.cells.item(1,2).text -eq "Test") {
+   f_LogonTest
+   }
+Else{
+   f_LogonProd
+}
+
+Write-Verbose "$(Get-Date -f T) - Checking Azure connectivity"
+
+#Check we have Azure connectivity
+$Subscription = Get-AzureSubscription -Current 
+
+    #Error handling
+    If ($Subscription) {
+
+        #Write details of current subscription to screen
+        Write-Verbose "$(Get-Date -f T) - Current subscription found - $($Subscription.SubscriptionName)"
+
+    }   #End of If ($Subscription)
+    Else {
+
+        #Write Error and exit
+        Write-Error "Unable to obtain current Azure subscription details" -ErrorAction Stop
+
+    }   #End of Else ($Subscription)
+
+#endregion
+
+#region Storage
+
+    Write-Verbose "$(Get-Date -f T) - Checking $($StorageAccountName) storage account"
+    $CreateVnet = $False
+
+    $CheckStorage = Get-AzureStorageAccount | Where-Object Label -like "$StorageAccountName"
+        if (!$CheckStorage) {
+            Write-Verbose "$(Get-Date -f T) - $($StorageAccountName) storage account not found, creating"
+
+            #Use the New-AzureStorageAccountName cmdlet to set-up a new storage account
+            New-AzureStorageAccount -StorageAccountName $storageAccountName -Location $Location -Description "Storage for [$CustomerName]" -ErrorAction SilentlyContinue | Out-Null
+
+            #Error handling
+             If (!$?) {
+                Write Error and exit
+                Write-Error "Unable to create storage account - $StorageAccountName" -ErrorAction Stop
+                }   #End of If (!$?) 
+             Else {
+
+                Write-Verbose "$(Get-Date -f T) - $StorageAccountName storage account successfully created"
+                $CreateVnet = $true
+
+                }   #End of Else (!$?)
+
+            }
+
+        else {
+            Write-Verbose "$(Get-Date -f T) - Referencing the storage account"
+
+            #Reference the new storage account in preparation for the creation of VMs
+            Set-AzureSubscription -SubscriptionName ($Subscription).SubscriptionName -CurrentStorageAccountName $StorageAccountName -ErrorAction SilentlyContinue
+
+            #Error handling
+            If (!$?) {
+
+                #Write Error and exit
+                Write-Error "Unable to reference storage account" -ErrorAction Stop
+
+            }   #End of If (!$?) 
+            Else {
+
+                #Troubleshooting message
+                Write-Verbose "$(Get-Date -f T) - Storage account successfully referenced"
+               
+            }   #End of Else (!$?)
+        }
+
+
+
+
+
+
+
+#endregion Storage
+
+#region Create NetCfg File
+    if ($CreateVnet) {
+        #Variable for NetCfg file
+        $SourceParent = (Get-Location).Path
+        $NetCfgFile = "$SourceParent\$($CustomerId)_vNet.netcfg"
+
+        #Troubleshooting messages
+        Write-Verbose "$(Get-Date -f T) - Creating vNet config file"
+        Write-Debug "About to create the vNet config file"
+
+        #Use the f_Create-AzurevNetCfgFile function to create the NetCfg XML file used to seed the new Azure virtual network
+        f_Create-AzurevNetCfgFile -DNSServername $DNSServername -Location $Location -NetCfgFile $NetCfgFile -SubnetNumber $Subnetnumber -SubnetName $Subnetname
+        }
+    else {
+        Write-Verbose "$(Get-Date -f T) - no config file created, storage found!"
+        }
+
+#endregion Create NetCfg File
+
+#region Create Virtual Network
+    if ($CreateVnet) {
+        #Troubleshooting messages
+        Write-Verbose "$(Get-Date -f T) - Creating Azure DNS object"
+        Write-Debug "About to create Azure DNS object"
+
+        #First, create an object representing the DNS server for this vNet (this is used with the -DnsSettings parameter of New-AZureVM)
+        $AzureDns = New-AzureDns -IPAddress "10.10.$($SubnetNumber).20" -Name "$DNSServerName" -ErrorAction SilentlyContinue 
+
+        #Error handling
+        If ($AzureDns) {
+            Write-Verbose "$(Get-Date -f T) - DNS object successfully created"
+            }   #End of If ($AzureDns) 
+        Else {
+            #Write Error and exit
+            Write-Error "Unable to create DNS object" -ErrorAction Stop
+            }   #End of Else ($AzureDns)
+
+        #Troubleshooting messages
+        Write-Verbose "$(Get-Date -f T) - Checking for existing vNet config"
+        Write-Debug "About to check for existing vNet config"
+
+        #Call f_Update-AzurevNetConfig function to create or update the VNet configuration
+        f_Update-AzurevNetConfig -vNetName $vNetName -NetCfgFile $NetCfgFile
+        }
+    else {
+        Write-Verbose "$(Get-Date -f T) - no vNet created, storage found!"
+        }
+#endregion Create Virtual Network
+
+
+
+#region Loop create
+#
+# Loop Excel lines
+#
+
+Do { 
+
+    $ServerType =  $Worksheet.cells.item($i,1).text 
+    $ServerCount =  $Worksheet.cells.item($i,2).text 
+    $ServerFunction =  $Worksheet.cells.item($i,3).text 
+    $ServerInDomain =  $Worksheet.cells.item($i,4).text 
+
+    Write-Verbose "$(Get-Date -f T) - ServerType: $ServerType, ServerCount: $ServerCount, ServerFunction: $ServerFunction, ServerInDomain: $ServerInDomain"          
+    
+
+    Switch ($Servertype) {
+
+        DC{
+          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
+          Write-Verbose "f_CreateAzureServer"
+          Write-Verbose "   -CustomerId $CustomerId"
+          Write-Verbose "   -Suffix $Suffix"
+          Write-Verbose "   -AdminUser $AdminUser"
+          Write-Verbose "   -AdminPassword $AdminPassword"
+          Write-Verbose "   -SecurePassword $SecurePassword"
+          Write-Verbose "   -ForestFqdn $ForestFqdn"
+          Write-Verbose "   -Domain $Domain"
+          Write-Verbose "   -DomainCredential $DomainCredential"
+          Write-Verbose "   -ServerCount $ServerCount"
+        <#          f_CreateAzureServer `
+            -CustomerId $CustomerId 
+            -Suffix 
+            -AdminUser 
+            -AdminPassword 
+            -SecurePassword 
+            -ForestFqdn 
+            -Domain 
+            -DomainCredential 
+            -ServerCount $ServerCount
+        #>
+        }
+        MEM{
+          "f_CreateMEM"
+        }
+
+        SQL{
+          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
+          Write-Verbose "f_Create-AzureSQL"
+          Write-Verbose "   -CustomerId $CustomerId"
+          Write-Verbose "   -AdminUser $AdminUser"
+          Write-Verbose "   -AdminPassword $AdminPassword"
+          Write-Verbose "   -SecurePassword $SecurePassword"
+          Write-Verbose "   -ForestFqdn $ForestFqdn"
+          Write-Verbose "   -Domain $Domain"
+          Write-Verbose "   -DomainCredential $DomainCredential"
+          Write-Verbose "   -RdsCount $ServerCount"
+          Write-Verbose "   -StartIp $StartIp"
+        <#        f_Create-AzureSQL `
+            -CustomerId $CustomerId
+            -AdminUser
+            -AdminPassword
+            -SecurePassword
+            -ForestFqdn
+            -Domain
+            -DomainCredential
+            -RdsCount
+            -StartIp
+        #>
+        }
+
+        SQI{
+          "f_CreateSQI"
+        }
+        
+        RDS{
+          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
+          Write-Verbose "f_Create-AzureRDS"
+          Write-Verbose "   -CustomerId $CustomerId"
+          Write-Verbose "   -AdminUser $AdminUser"
+          Write-Verbose "   -AdminPassword $AdminPassword"
+          Write-Verbose "   -SecurePassword $SecurePassword"
+          Write-Verbose "   -ForestFqdn $ForestFqdn"
+          Write-Verbose "   -Domain $Domain"
+          Write-Verbose "   -DomainCredential $DomainCredential"
+          Write-Verbose "   -RdsCount $ServerCount"
+          Write-Verbose "   -StartIp $StartIp"
+        <#        f_Create-AzureRDS `
+            -CustomerId $CustomerId
+            -AdminUser
+            -AdminPassword
+            -SecurePassword
+            -ForestFqdn
+            -Domain
+            -DomainCredential
+            -RdsCount $RdsCount
+            -StartIp
+        #>
+        }
+    
+    }
+
+    $i++ 
+} 
+While ($Worksheet.cells.item($i,2).text -ne "") 
+
+
+#endregion
+
+
+
+####################
+## MAIN SCRIPT END
+####################
+
+
+#region close
+
+##############################
+#Stage 9 - Close Excel
+##############################
+
+$objexcel.quit()
+
+#endregion
