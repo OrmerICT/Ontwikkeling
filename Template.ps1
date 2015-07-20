@@ -13,6 +13,7 @@ param (
     [string]$KworkingDir
 )
 
+#region StandardFramework
 Set-Location $KworkingDir
     
 . .\WriteLog.ps1
@@ -22,7 +23,7 @@ $GetProcName = Get-PSCallStack
 $procname = $GetProcname.Command
 $Customer = $MachineGroep.Split(“.”)[2]
 
-#region Object
+
 $logvar = New-Object -TypeName PSObject -Property @{
     'Domain' = $Domain 
     'MachineName' = $MachineName
@@ -31,7 +32,10 @@ $logvar = New-Object -TypeName PSObject -Property @{
     'Operator'= $Operator
     'TDNumber'= $TDNumber
 }
-#endregion Object
+
+remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+
+#endregion StandardFramework
     
 #region Execution
 f_New-Log -logvar $logvar -status 'Error' -Message 'Hello world' -LogDir $KworkingDir
