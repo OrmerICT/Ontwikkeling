@@ -33,7 +33,7 @@ param (
     [parameter(mandatory=$false)]
     [string]$TDNumber,
 
-    [parameter(mandatory=$true)]
+    [parameter(mandatory=$False)]
     [string]$KworkingDir
 
 #Procedure Vars
@@ -42,6 +42,7 @@ param (
 )
 
 #region start StandardFramework
+$KworkingDir = "c:\kworking"
 Set-Location $KworkingDir
     
 . .\WriteLog.ps1
