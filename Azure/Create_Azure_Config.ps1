@@ -5,7 +5,7 @@ Param(
       #CustomerName
       [parameter(Mandatory=$False)]
       [ValidateNotNullOrEmpty()]
-      [String] $ExcelFile = "C:\Users\Raymond\Documents\GitHub\Temp\Azureconfig.xlsx"
+      [String] $ExcelFile = "C:\Users\Olaf\Documents\Github\Ontwikkeling\Azure\Azureconfig.xlsx"
 )
 
 #region Init
@@ -42,11 +42,6 @@ $VerbosePreference = "Continue"
 ##############################
 #Stage 0 - Open Excel 
 ##############################
-
-
-
-
-
 
 #Check for Excel inputfile
 Write-Verbose "$(Get-Date -f T) - Check if config xlsx exists"
@@ -124,11 +119,10 @@ Write-Verbose "$(Get-Date -f T) - ForestFqdn: $ForestFqdn"
 #endregion 
 
 #region Logon
+
 ##############################
 #Stage 1 - Loop Excel sheet
 ##############################
-
-$i = 8 
 
 #
 #Stage 1 - Check Connectivity
@@ -210,15 +204,10 @@ $Subscription = Get-AzureSubscription -Current
             }   #End of Else (!$?)
         }
 
-
-
-
-
-
-
 #endregion Storage
 
 #region Create NetCfg File
+
     if ($CreateVnet) {
         #Variable for NetCfg file
         $SourceParent = (Get-Location).Path
@@ -232,12 +221,13 @@ $Subscription = Get-AzureSubscription -Current
         f_Create-AzurevNetCfgFile -DNSServername $DNSServername -Location $Location -NetCfgFile $NetCfgFile -SubnetNumber $Subnetnumber -SubnetName $Subnetname
         }
     else {
-        Write-Verbose "$(Get-Date -f T) - no config file created, storage found!"
+        Write-Verbose "$(Get-Date -f T) - vnet: no config file created, storage found!"
         }
 
 #endregion Create NetCfg File
 
 #region Create Virtual Network
+
     if ($CreateVnet) {
         #Troubleshooting messages
         Write-Verbose "$(Get-Date -f T) - Creating Azure DNS object"
@@ -263,16 +253,29 @@ $Subscription = Get-AzureSubscription -Current
         f_Update-AzurevNetConfig -vNetName $vNetName -NetCfgFile $NetCfgFile
         }
     else {
-        Write-Verbose "$(Get-Date -f T) - no vNet created, storage found!"
-        }
-#endregion Create Virtual Network
+        Write-Verbose "$(Get-Date -f T) - VNET: no vNet created, storage found!"
 
+        Write-Verbose "$(Get-Date -f T) - Check vNet"
+
+        #Variable for NetCfg file
+        $VnetSubNet = $(Get-AzureDeployment -ServiceName "$($CustomerId.ToUpper())-DC-01$Suffix" | Get-AzureDNS).Address.Split(“.”)[2]
+
+
+        #Troubleshooting messages
+        Write-Verbose "$(Get-Date -f T) - Subnetnumber found: $VnetSubNet vs. Subnetnumber excel: $SubnetNumber"
+    
+        }
+
+#endregion Create Virtual Network
 
 
 #region Loop create
 #
 # Loop Excel lines
 #
+
+$i = 8 
+
 
 Do { 
 
