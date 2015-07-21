@@ -1,5 +1,59 @@
 ﻿function f_CreateFirstDC {
 
+Param(
+      [parameter(Mandatory,Position=0)]
+      [ValidateNotNullOrEmpty()]
+      [String]$Suffix,
+      
+      #The admin user account 
+      [parameter(Mandatory,Position=1)]
+      [ValidateNotNullOrEmpty()]
+      [String]$AdminUser,
+
+      #The admin password
+      [parameter(Mandatory,Position=2)]
+      [ValidateNotNullOrEmpty()]
+      [String]$AdminPassword,
+
+      #The FQDN of the Active Directory forest
+      [parameter(Position=3)]
+      [String]$ForestFqdn,
+
+      #The NetBios name of the Active Directory domain to create
+      [parameter(Position=4)]
+      [String]$Domain,
+
+      [parameter(Position=5)]
+      [String]$Size,
+
+      #The data centre location of the build items
+      [parameter(Mandatory,Position=6)]
+      [ValidateNotNullOrEmpty()]
+      [String]$Location,
+
+      #The virtual network name
+      [parameter(Mandatory,Position=7)]
+      [ValidateNotNullOrEmpty()]
+      [String]$vNetName,
+
+      #The Azure DNS object
+      [parameter(Mandatory,Position=8)]
+      [ValidateNotNullOrEmpty()]
+      $AzureDns,
+
+      [parameter(Mandatory,Position=9)]
+      [ValidateNotNullOrEmpty()]
+      $Subnetname,
+
+      [parameter(Mandatory,Position=10)]
+      [ValidateNotNullOrEmpty()]
+      $SubnetNumber,
+
+      [parameter(Mandatory,Position=11)]
+      [ValidateNotNullOrEmpty()]
+      $AdditionalDataDisk
+      )
+
 #region Get the latest Windows Server 2012 R2 Datacenter OS image
     Write-Verbose "$(Get-Date -f T) - Obtaining the latest Windows Server 2012 R2 image"
 
@@ -29,13 +83,13 @@ Write-Verbose "$(Get-Date -f T) - Commissioning first DC"
 #Set VM specific variables (Name / Instance Size)
 $VMName = "$DNSServerName"
 
-$Size = "Small"
+
 
 Write-Verbose "$(Get-Date -f T) - Creating VM config"
 
 $VMConfig = New-AzureVMConfig -Name $VMName -InstanceSize $Size -ImageName $Image |
             Add-AzureProvisioningConfig -Windows -AdminUsername $AdminUser -Password $AdminPassword |
-            Add-AzureDataDisk -CreateNew -DiskSizeInGB 20 -DiskLabel "$($DNSServerName)-Data" -LUN 0 -HostCaching None |
+            Add-AzureDataDisk -CreateNew -DiskSizeInGB $AdditionalDataDisk -DiskLabel "$($DNSServerName)-Data" -LUN 0 -HostCaching None |
             Set-AzureSubnet -SubnetNames "$SubnetName" |
             Set-AzureStaticVNetIP -IPAddress "10.10.$($SubnetNumber).20"
 

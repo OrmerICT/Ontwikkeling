@@ -40,12 +40,15 @@ Param(
       [parameter(Position=7)]
       [String]$Domain,
 
-      #Credentials for the dcpromo
       [parameter(Position=8)]
+      [String]$Size,
+
+      #Credentials for the dcpromo
+      [parameter(Position=9)]
       $DomainCredential,
 
       #The number of DCs to spin up
-      [parameter(Position=9)]
+      [parameter(Position=10)]
       [ValidateRange(1,4)]
       [Single]$ServerCount,
 
@@ -61,9 +64,6 @@ Param(
     #Create a loop to process each additional server needed
     for ($i = 1; $i -le $ServerCount; $i++) {
    
-        #Set VM size
-        $Size = "Small"
-
 
         #Check whether we're creating a DC and set the VMConfig accordingly
         If ($IsDc) {

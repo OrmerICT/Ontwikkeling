@@ -5,8 +5,10 @@ Param(
       #CustomerName
       [parameter(Mandatory=$False)]
       [ValidateNotNullOrEmpty()]
-      [String] $ExcelFile = "C:\Users\Olaf\Documents\Github\Ontwikkeling\Azure\Azureconfig.xlsx"
+      [String] $ExcelFile = "C:\Users\Raymond\Documents\GitHub\Ontwikkeling\Azure\Azureconfig.xlsx"
 )
+
+CLS
 
 #region Init
 
@@ -30,7 +32,11 @@ $VerbosePreference = "Continue"
 . .\f_CreateFirstDC.ps1
 . .\f_Create-VmPsSession.ps1
 . .\f_Import-VMWinRmCert.ps1
-
+. .\f_Create-AzureMEM.ps1
+. .\f_Create-AzureRDS.ps1
+. .\f_Create-AzureSQL.ps1
+. .\f_Create-AzureDC.ps1
+. .\f_Create-AzureVM.ps1
 
 #endregion
 
@@ -120,13 +126,8 @@ Write-Verbose "$(Get-Date -f T) - ForestFqdn: $ForestFqdn"
 
 #region Logon
 
-##############################
-#Stage 1 - Loop Excel sheet
-##############################
-
-#
 #Stage 1 - Check Connectivity
-#
+
 Write-Verbose "$(Get-Date -f T) - Logon Azure"
 
 If ($Worksheet.cells.item(1,2).text -eq "Test") {
@@ -254,16 +255,6 @@ $Subscription = Get-AzureSubscription -Current
         }
     else {
         Write-Verbose "$(Get-Date -f T) - VNET: no vNet created, storage found!"
-
-        Write-Verbose "$(Get-Date -f T) - Check vNet"
-
-        #Variable for NetCfg file
-        $VnetSubNet = $(Get-AzureDeployment -ServiceName "$($CustomerId.ToUpper())-DC-01$Suffix" | Get-AzureDNS).Address.Split(“.”)[2]
-
-
-        #Troubleshooting messages
-        Write-Verbose "$(Get-Date -f T) - Subnetnumber found: $VnetSubNet vs. Subnetnumber excel: $SubnetNumber"
-    
         }
 
 #endregion Create Virtual Network
@@ -276,109 +267,146 @@ $Subscription = Get-AzureSubscription -Current
 
 $i = 8 
 
-
 Do { 
 
     $ServerType =  $Worksheet.cells.item($i,1).text 
     $ServerCount =  $Worksheet.cells.item($i,2).text 
     $ServerFunction =  $Worksheet.cells.item($i,3).text 
     $ServerInDomain =  $Worksheet.cells.item($i,4).text 
+    $AdditionalDataDisk =  $Worksheet.cells.item($i,5).text 
 
     Write-Verbose "$(Get-Date -f T) - ServerType: $ServerType, ServerCount: $ServerCount, ServerFunction: $ServerFunction, ServerInDomain: $ServerInDomain"          
-    
 
     Switch ($Servertype) {
 
-        *DC-01{
-          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
-          Write-Verbose "f_CreateAzureServer"
-          Write-Verbose "   -CustomerId $CustomerId"
-          Write-Verbose "   -Suffix $Suffix"
-          Write-Verbose "   -AdminUser $AdminUser"
-          Write-Verbose "   -AdminPassword $AdminPassword"
-          Write-Verbose "   -SecurePassword $SecurePassword"
-          Write-Verbose "   -ForestFqdn $ForestFqdn"
-          Write-Verbose "   -Domain $Domain"
-          Write-Verbose "   -DomainCredential $DomainCredential"
-          Write-Verbose "   -ServerCount $ServerCount"
-        <#          f_CreateAzureServer `
-            -CustomerId $CustomerId 
-            -Suffix 
-            -AdminUser 
-            -AdminPassword 
-            -SecurePassword 
-            -ForestFqdn 
-            -Domain 
-            -DomainCredential 
-            -ServerCount $ServerCount
-        #>
-        }
-        MEM{
-          "f_CreateMEM"
-        }
+                        "DC-01" {
+                            If ($ServerCount -gt 0) {
 
-        SQL{
-          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
-          Write-Verbose "f_Create-AzureSQL"
-          Write-Verbose "   -CustomerId $CustomerId"
-          Write-Verbose "   -AdminUser $AdminUser"
-          Write-Verbose "   -AdminPassword $AdminPassword"
-          Write-Verbose "   -SecurePassword $SecurePassword"
-          Write-Verbose "   -ForestFqdn $ForestFqdn"
-          Write-Verbose "   -Domain $Domain"
-          Write-Verbose "   -DomainCredential $DomainCredential"
-          Write-Verbose "   -RdsCount $ServerCount"
-          Write-Verbose "   -StartIp $StartIp"
-        <#        f_Create-AzureSQL `
-            -CustomerId $CustomerId
-            -AdminUser
-            -AdminPassword
-            -SecurePassword
-            -ForestFqdn
-            -Domain
-            -DomainCredential
-            -RdsCount
-            -StartIp
-        #>
-        }
+                                f_CreateFirstDC -Suffix $Suffix `
+                                                -AdminUser $AdminUser `
+                                                -AdminPassword $AdminPassword `
+                                                -ForestFqdn $ForestFqdn `
+                                                -Domain $Domain `
+                                                -Size "Medium" `
+                                                -Location $Location `
+                                                -vNetName $vNetName `
+                                                -AzureDns $AzureDns `
+                                                -Subnetname $Subnetname `
+                                                -SubnetNumber $SubnetNumber `
+                                                -AdditionalDataDisk $AdditionalDataDisk
+                                }   #End of If ($DcCount -gt 0)
 
-        SQI{
-          "f_CreateSQI"
-        }
+                        }
+                        "*DC*" {
+                            If ($ServerCount -gt 0) {
+
+                                #Create a domain identity
+                                $CombinedUser = "$($Domain)\$($AdminUser)"
+
+                                #Create a domain credential for the dcpromo
+                                $DomainCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $CombinedUser,$SecurePassword
+
+                                $StartIp = $(get-azurevm  | measure-object).Count + 20
+
+                                #Call the f_Create-AzureServer function
+                                f_Create-AzureServer -CustomerId $CustomerId `
+                                                -Suffix $Suffix `
+                                                -AdminUser $AdminUser `
+                                                -AdminPassword $AdminPassword `
+                                                -SecurePassword $SecurePassword `
+                                                -ForestFqdn $ForestFqdn `
+                                                -Domain $Domain `
+                                                -Size "Medium" `
+                                                -DomainCredential $DomainCredential `
+                                                -ServerCount ($ServerCount) `
+                                                -StartIp $StartIp `
+                                                -IsDC
+
+
+                                }   #End of If ($ServerCount -gt 0)
+                        }
+
+                        "*SQL*" {
+                            If ($ServerCount -ge 0) {
+
+                                #Create a domain identity
+                                $CombinedUser = "$($Domain)\$($AdminUser)"
+
+                                #Create a domain credential for the dcpromo
+                                $DomainCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $CombinedUser,$SecurePassword
+
+                                $StartIp = $(get-azurevm  | measure-object).Count + 20
+
+                                #Call the f_Create-AzureRDS function for RDS
+                                f_Create-AzureSQL -CustomerId $CustomerId `
+                                                -AdminUser $AdminUser `
+                                                -AdminPassword $AdminPassword `
+                                                -SecurePassword $SecurePassword `
+                                                -ForestFqdn $ForestFqdn `
+                                                -Domain $Domain `
+                                                -DomainCredential $DomainCredential `
+                                                -SqlCount ($ServerCount) `
+                                                -StartIp $StartIp
+                                }   #End of ($ServerCount -ge 0)
+                        }
+
         
-        RDS{
-          Write-Verbose "Write-Verbose $(Get-Date -f T) - Executing command: "
-          Write-Verbose "f_Create-AzureRDS"
-          Write-Verbose "   -CustomerId $CustomerId"
-          Write-Verbose "   -AdminUser $AdminUser"
-          Write-Verbose "   -AdminPassword $AdminPassword"
-          Write-Verbose "   -SecurePassword $SecurePassword"
-          Write-Verbose "   -ForestFqdn $ForestFqdn"
-          Write-Verbose "   -Domain $Domain"
-          Write-Verbose "   -DomainCredential $DomainCredential"
-          Write-Verbose "   -RdsCount $ServerCount"
-          Write-Verbose "   -StartIp $StartIp"
-        <#        f_Create-AzureRDS `
-            -CustomerId $CustomerId
-            -AdminUser
-            -AdminPassword
-            -SecurePassword
-            -ForestFqdn
-            -Domain
-            -DomainCredential
-            -RdsCount $RdsCount
-            -StartIp
-        #>
-        }
-    
-    }
+                        "*RDS*" {
+                            If ($ServerCount -ge 0) {
 
-    $i++ 
-} 
+                                #Create a domain identity
+                                $CombinedUser = "$($Domain)\$($AdminUser)"
+
+                                #Create a domain credential for the dcpromo
+                                $DomainCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $CombinedUser,$SecurePassword
+
+                                $StartIp = $(get-azurevm  | measure-object).Count + 20 
+
+                                #Call the f_Create-AzureRDS function for RDS
+                                f_Create-AzureRDS -CustomerId $CustomerId `
+                                                -AdminUser $AdminUser `
+                                                -AdminPassword $AdminPassword `
+                                                -SecurePassword $SecurePassword `
+                                                -ForestFqdn $ForestFqdn `
+                                                -Domain $Domain `
+                                                -DomainCredential $DomainCredential `
+                                                -SqlCount ($ServerCount) `
+                                                -StartIp $StartIp
+                                 }   #End of ($ServerCount -ge 0)
+                        }
+
+                        "*MEM*" {
+                            If ($ServerCount -ge 0) {
+
+                                #Create a domain identity
+                                $CombinedUser = "$($Domain)\$($AdminUser)"
+
+                                #Create a domain credential for the dcpromo
+                                $DomainCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $CombinedUser,$SecurePassword
+
+                                $StartIp = $(get-azurevm  | measure-object).Count + 20 
+
+                                #Call the f_Create-AzureRDS function for RDS
+                                f_Create-AzureMEM -CustomerId $CustomerId `
+                                                -AdminUser $AdminUser `
+                                                -AdminPassword $AdminPassword `
+                                                -SecurePassword $SecurePassword `
+                                                -ForestFqdn $ForestFqdn `
+                                                -Domain $Domain `
+                                                -DomainCredential $DomainCredential `
+                                                -SqlCount ($ServerCount) `
+                                                -StartIp $StartIp
+                                 }   #End of ($ServerCount -ge 0)
+                        }
+    
+                        }
+
+                        $i++ 
+                        } 
 While ($Worksheet.cells.item($i,2).text -ne "") 
 
 
-#endregion
+#endregion Loop create
 
 
 

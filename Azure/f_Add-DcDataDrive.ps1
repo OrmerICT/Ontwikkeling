@@ -16,7 +16,7 @@ Param(
 #We've added an additional disk to store AD's DB, logs and SYSVOl - time to initialize, partition and format the drive
 $ConfigureDisk = Invoke-Command -Session $VMSession -ScriptBlock {Get-Disk | Where-Object {$_.PartitionStyle -eq "RAW"} | 
                                                                   Initialize-Disk -PartitionStyle MBR -PassThru |
-                                                                  New-Partition -UseMaximumSize -DriveLetter Z | 
+                                                                  New-Partition -UseMaximumSize -DriveLetter F | 
                                                                   Format-Volume -FileSystem NTFS -Force -Confirm:$False}
     #Error handling
     If ($ConfigureDisk) {
