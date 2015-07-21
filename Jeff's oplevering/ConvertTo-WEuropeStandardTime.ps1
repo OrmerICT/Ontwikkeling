@@ -4,5 +4,5 @@
     [datetime]$DateTime
   )
   $TimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
-  [System.TimeZoneInfo]::ConvertTimeFromUtc($UTCTime, $TimeZone)
+  [System.TimeZoneInfo]::ConvertTimeFromUtc($DateTime.ToUniversalTime(), $TimeZone)
 }
