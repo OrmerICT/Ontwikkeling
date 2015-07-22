@@ -14,7 +14,7 @@ foreach ($printServer in $printServers){
         WriteToLog "Removing Registry KEY [$($printServerPrinter.Name)]..."
         Remove-Item -Path Registry::$printServerPrinter -Recurse -Force -ErrorAction SilentlyContinue  -ErrorVariable removeItemError
         if(!($removeItemError)){
-            WriteToLog  "Registry KEY [$($printServerPrinter.Name)] succesfully removed"            
+            WriteToLog  "Registry KEY [$($printServerPrinter.Name)] succesfully removed"             
         }
         else{
             WriteToLog  "Error during removal of Registry KEY [$($printServerPrinter.Name)]:`n`t`t`t$($removeItemError[0].Exception)" 
