@@ -274,8 +274,9 @@ Do {
     $ServerFunction =  $Worksheet.cells.item($i,3).text 
     $ServerInDomain =  $Worksheet.cells.item($i,4).text 
     $AdditionalDataDisk =  $Worksheet.cells.item($i,5).text 
+    $Size = $Worksheet.cells.item($i,6).text
 
-    Write-Verbose "$(Get-Date -f T) - ServerType: $ServerType, ServerCount: $ServerCount, ServerFunction: $ServerFunction, ServerInDomain: $ServerInDomain"          
+    Write-Verbose "$(Get-Date -f T) - ServerType: $ServerType, ServerCount: $ServerCount, ServerFunction: $ServerFunction, ServerInDomain: $ServerInDomain, InstanSize: $Size"          
 
     Switch ($Servertype) {
 
@@ -287,7 +288,7 @@ Do {
                                                 -AdminPassword $AdminPassword `
                                                 -ForestFqdn $ForestFqdn `
                                                 -Domain $Domain `
-                                                -Size "Medium" `
+                                                -Size $Size `
                                                 -Location $Location `
                                                 -vNetName $vNetName `
                                                 -AzureDns $AzureDns `
@@ -316,7 +317,7 @@ Do {
                                                 -SecurePassword $SecurePassword `
                                                 -ForestFqdn $ForestFqdn `
                                                 -Domain $Domain `
-                                                -Size "Medium" `
+                                                -Size $Size `
                                                 -DomainCredential $DomainCredential `
                                                 -ServerCount ($ServerCount) `
                                                 -StartIp $StartIp `
@@ -344,6 +345,7 @@ Do {
                                                 -SecurePassword $SecurePassword `
                                                 -ForestFqdn $ForestFqdn `
                                                 -Domain $Domain `
+                                                -Size $Size `
                                                 -DomainCredential $DomainCredential `
                                                 -SqlCount ($ServerCount) `
                                                 -StartIp $StartIp
@@ -369,6 +371,7 @@ Do {
                                                 -SecurePassword $SecurePassword `
                                                 -ForestFqdn $ForestFqdn `
                                                 -Domain $Domain `
+                                                -Size $Size `
                                                 -DomainCredential $DomainCredential `
                                                 -SqlCount ($ServerCount) `
                                                 -StartIp $StartIp
@@ -393,6 +396,7 @@ Do {
                                                 -SecurePassword $SecurePassword `
                                                 -ForestFqdn $ForestFqdn `
                                                 -Domain $Domain `
+                                                -Size $Size `
                                                 -DomainCredential $DomainCredential `
                                                 -SqlCount ($ServerCount) `
                                                 -StartIp $StartIp

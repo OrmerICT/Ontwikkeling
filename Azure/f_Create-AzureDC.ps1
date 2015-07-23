@@ -1,10 +1,10 @@
 ﻿####################################
-## FUNCTION 7 - f_Create-AzureServer
+## FUNCTION 7 - f_Create-AzureDC
 ####################################
 
 #Creates member servers
 
-Function f_Create-AzureServer {
+Function f_Create-AzureDC {
 
 Param(
       #The CustomerId
@@ -267,7 +267,7 @@ Param(
     }   #End of for ($i = 1; $i -le $ServerCount; $i++)
 
 
-}   #End of Function f_Create-AzureServer
+}   #End of Function f_Create-AzureDC
 
 
 ##########################################################################################################

@@ -50,9 +50,6 @@ Param(
       )
 
 
-    #Set VM size
-    $Size = "Small"
-    
     #Obtain client image to be used
     
         #Troubleshooting messages
