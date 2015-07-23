@@ -20,7 +20,7 @@ Function Get-LogonStatus($userName){
     }
     foreach ($loggedOnUser in $loggedOnUsers){
         if($loggedOnUser){
-            if(($loggedOnUser[1].ToString() -eq $userName){
+            if(($loggedOnUser[1].ToString()) -eq $userName){
                 Return $true
                 Break
             }
