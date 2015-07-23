@@ -1,4 +1,28 @@
-﻿[cmdletbinding()]
+﻿###############################################################################
+#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
+###############################################################################
+<#
+#******************************************************************************
+# File:     AdUserPwd.ps1
+# Date:     07/22/2015
+# Version:  0.1
+#
+# Purpose:  PowerShell script to add a new user.
+#
+# Usage:    AdUserPwd.ps1
+# Needed: Remote administration tools to load the server manager
+#
+# Copyright (C) 2015 Ormer ICT 
+#
+# Revisions:
+# ----------
+# 0.1.0   07/22/2015   Created script    By PvdW
+#    
+#>#******************************************************************************
+#endregion Comments
+
+
+[cmdletbinding()]
 param (
     [parameter(mandatory=$false)]
     [string]$Operator,
@@ -23,6 +47,7 @@ param (
 	[String] $Domain = $env:USERDOMAIN
 )
 
+#region start StandardFramework
 Set-Location $KworkingDir
     
 . .\WriteLog.ps1
@@ -32,7 +57,7 @@ $GetProcName = Get-PSCallStack
 $procname = $GetProcname.Command
 $Customer = $MachineGroep.Split(“.”)[2]
 
-#region Object
+
 $logvar = New-Object -TypeName PSObject -Property @{
     'Domain' = $Domain 
     'MachineName' = $MachineName
@@ -41,15 +66,14 @@ $logvar = New-Object -TypeName PSObject -Property @{
     'Operator'= $Operator
     'TDNumber'= $TDNumber
 }
-#endregion Object
+
+remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+#endregion StandardFramework
     
-#region Execution
+#region Start log
 f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message $procname
+#endregion Start log
     
-
-
-
-
 #######################################
 ## FUNCTION 1 - f_Import-Module
 ########################################
@@ -88,8 +112,8 @@ function f_Import-Module{
 				}
 			}
 		}	
-}   #End of Function f_Import-Module
-##########################################################################################################
+}   
+#End of Function f_Import-Module
 
 
 #######################################
@@ -111,8 +135,8 @@ Param(
 	Else{
 		f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "User $UserName found"
 		}
-}   #End of Function f_UserExist
-##########################################################################################################
+}   
+#End of Function f_UserExist
 
 
 #######################################
@@ -134,8 +158,8 @@ Param(
 	else{
 		f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "User $UserName is enabled"
 		}
-}   #End of Function f_UserDisabled
-##########################################################################################################
+}   
+#End of Function f_UserDisabled
 
 
 #######################################
@@ -154,8 +178,8 @@ Param(
 	Set-ADAccountPassword -identity $UserName -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "$PassWord" -Force) | Set-ADuser -ChangePasswordAtLogon $Value
 	f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Unlock user account"
 	Unlock-ADAccount -Identity $UserName
-}   #End of Function f_resetPassword
-##########################################################################################################
+}   
+#End of Function f_resetPassword
 
 
 #######################################
@@ -184,15 +208,10 @@ Param(
         exit
 		}
 
-}   #End of Function f_TestLogin
-##########################################################################################################
+}   
+#End of Function f_TestLogin
 
-
-
-####################
-## MAIN SCRIPT BODY
-####################
-
+#region Start Scripting
 
 #########################
 #Stage 1 - import modules
@@ -237,4 +256,4 @@ f_TestLogin -Domain $Domain -UserName $UserName -PassWord $PassWord
 f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "END $procname"
 
 
-#endregion Execution
+#endregion Scripting

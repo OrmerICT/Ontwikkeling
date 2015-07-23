@@ -14,8 +14,6 @@
 # Needed: Remote administration tools to load the server manager
 #
 # Copyright (C) 2015 Ormer ICT 
-# 
-# 
 #
 # Revisions:
 # ----------
