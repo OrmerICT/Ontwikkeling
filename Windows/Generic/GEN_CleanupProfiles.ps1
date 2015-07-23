@@ -20,7 +20,7 @@ Function Get-LogonStatus($userName){
     }
     foreach ($loggedOnUser in $loggedOnUsers){
         if($loggedOnUser){
-            if(($loggedOnUser[1].ToString().ToUpper()) -eq $userName){
+            if(($loggedOnUser[1].ToString() -eq $userName){
                 Return $true
                 Break
             }
@@ -55,10 +55,10 @@ Function Fix-UnremovableProfileFolders{
             $acl = Get-Acl $folder
             $acl.Access | where-object {$_.AccessControlType -eq “Deny”} | Foreach-object { $acl.RemoveAccessRule($_) }
             Try{
-                $folder.SetAccessControl($acl)
+                $folder.SetAccessControl($acl) | Out-Null
             }
             Catch{
-                Write-Verbose -Message "Error Setting ACL"
+                WriteToLog "Error setting ACL on $($folder.FullName)" "ERR"
             }
         }
     }
