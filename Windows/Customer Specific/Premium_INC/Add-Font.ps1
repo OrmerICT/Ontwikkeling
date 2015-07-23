@@ -23,7 +23,7 @@
 #******************************************************************************
 # File:     Add-Font.ps1
 # Date:     08/28/2013
-# Version:  1.1
+# Version:  1.2
 #
 # Purpose:  PowerShell script to install Windows fonts.
 #
@@ -36,15 +36,34 @@
 # ----------
 # 1.0.0   09/22/2010   Created script.
 # 1.0.1   08/28/2013   Fixed help text.  Added quotes around paths in messages.
-# 1.1     07/14/2015   Logging ingevoerd  (PvdW)
+# 1.1.0   07/14/2015   Logging ingevoerd  (PvdW)
+# 1.2.0   07/23/2015   Logging aangepast  (PvdW)
 #******************************************************************************
 
 #*******************************************************************
 # Declare Parameters
 #*******************************************************************
+
+[cmdletbinding()]
 param(
     [string] $path = "",
-    [switch] $help = $false
+    [switch] $help = $false,
+
+    [parameter(mandatory=$false)]
+    [string]$Operator,
+
+    [parameter(mandatory=$false)]
+    [string]$MachineGroep,
+
+    [parameter(mandatory=$false)]
+    [string]$TDNumber,
+
+    [parameter(mandatory=$True)]
+    [string]$KworkingDir
+	
+	# Procedure vars
+#   [Parameter(Mandatory=$false)]
+#    [String] $UserName,
 )
 
 #*******************************************************************
@@ -418,40 +437,6 @@ function Get-SpecialFolder($id)
 }
 
 #*******************************************************************
-# Function f_New-Log
-#
-# Purpose:  
-#
-# Input:    
-#
-# Returns:  Log File
-#
-#*******************************************************************
-function f_New-Log {
-    [cmdletbinding()]
-    param (
-        [Parameter(Mandatory=$False)]
-        [PSObject]$logvar,
-        [parameter(mandatory=$true)][validateset('Start','Error','Success','Failure','Info')]
-        [string]$Status,
-        [Parameter(Mandatory=$False)]
-        [string]$Message
-    )
-    $LogFile="C:\kworking\OrmTmp\FontInstall.log"
-    try 
-    {
-        $DateTime = Get-Date -Format 'yyyy-MM-dd hh:mm:ss'
-        $Ormlogstring = '[{0}][{1}][{2}][{3}][{4}][{5}][{6}][{7}][{8}]' -f $($DateTime.SubString(0,10)),$($DateTime.SubString(11)),$logvar.Operator,$logvar.Domain,$Logvar.MachineName,$logvar.Customer,$logvar.FontfileType,$Status,$Message
-        $OrmLogString | Out-File $logFile -Append
-    }
-    catch
-    {
-        Write-Error -Message 'Unable to generate OrmLog'
-    }
-}
-
-
-#*******************************************************************
 # Function Add-SingleFont()
 #
 # Purpose:  Install a font file
@@ -478,35 +463,34 @@ function Add-SingleFont($filePath)
 
         if ($fontName -eq "") { $fontName = $fileBaseName }
 
-        copy-item $filePath -destination $fontsFolderPath
-        f_New-Log -logvar $logvar -status 'Start' -Message 'Copy Font files'
+        copy-item $filePath -destination $fontsFolderPath -ErrorAction SilentlyContinue
+        f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message 'Copy Font files'
 
-        $fontFinalPath = Join-Path $fontsFolderPath $fileName
-        $retVal = [FontResource.AddRemoveFonts]::AddFont($fontFinalPath)
-        f_New-Log -logvar $logvar -status 'Info' -Message "Installing `'$( $fontFinalPath)`' Font "
+        $fontFinalPath = Join-Path $fontsFolderPath $fileName -ErrorAction SilentlyContinue
+        $retVal = [FontResource.AddRemoveFonts]::AddFont($fontFinalPath) 
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Installing `'$( $fontFinalPath)`' Font "
         if ($retVal -eq 0) {
-            Write-Host "Font `'$($filePath)`'`' installation failed"
-            f_New-Log -logvar $logvar -status 'Error' -Message "Font `'$($filePath)`'`' installation failed"
-            Write-Host ""
+            #Write-Host "Font `'$($filePath)`'`' installation failed"
+            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Font `'$($filePath)`'`' installation failed"
+            #Write-Host ""
             1
         }
         else
         {
-            Write-Host "Font `'$($filePath)`' installed successfully"
-            f_New-Log -logvar $logvar -status 'Success' -Message "Font `'$($filePath)`' installed successfully"
-            Write-Host ""
-            Set-ItemProperty -path "$($fontRegistryPath)" -name "$($fontName)$($hashFontFileTypes.item($fileExt))" -value "$($fileName)" -type STRING
+            #Write-Host "Font `'$($filePath)`' installed successfully"
+            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Font `'$($filePath)`' installed successfully"
+            #Write-Host ""
+            Set-ItemProperty -path "$($fontRegistryPath)" -name "$($fontName)$($hashFontFileTypes.item($fileExt))" -value "$($fileName)" -type STRING 
             0
         }
-        ""
-    }
+     }
     catch
     {
-        Write-Host "An error occured installing `'$($filePath)`'"
-        f_New-Log -logvar $logvar -status 'Error' -Message "An error occured installing `'$($filePath)`'"
-        Write-Host ""
-        Write-Host "$($error[0].ToString())"
-        Write-Host ""
+       # Write-Host "An error occured installing `'$($filePath)`'" -ErrorAction SilentlyContinue
+        f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured installing `'$($filePath)`'"
+       # Write-Host ""
+        Write-Host "$($error[0].ToString())" -ErrorAction SilentlyContinue
+        #Write-Host ""
         $error.clear()
         1
     }
@@ -573,8 +557,8 @@ function Process-Arguments()
 
     if ($unnamedArgs.Length -gt 0)
     {
-        write-host "The following arguments are not defined:"
-        f_New-Log -logvar $logvar -status 'Info' -Message 'The following arguments are not defined:'
+        #write-host "The following arguments are not defined:"
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message 'The following arguments are not defined:'
         $unnamedArgs
     }
 
@@ -591,19 +575,19 @@ function Process-Arguments()
             $retVal = Add-SingleFont $path
             if ($retVal -ne 0)
             {
-            f_New-Log -logvar $logvar -status 'Info' -Message 'Exit 1'
+            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message 'Exit 1'
                 exit 1
             }
             else
             {
-            f_New-Log -logvar $logvar -status 'Info' -Message 'Exit 0'
+            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message 'Exit 0'
                 exit 0
             }
         }
         else
         {
             "`'$($path)`' not a valid font file type"
-            f_New-Log -logvar $logvar -status 'Info' -Message "`'$($path)`' not a valid font file type"
+            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "`'$($path)`' not a valid font file type"
             ""
             exit 1
         }
@@ -625,7 +609,7 @@ function Process-Arguments()
             else
             {
                 "`'$(Join-Path $path $file.Name)`' not a valid font file type"
-                f_New-Log -logvar $logvar -status 'Error' -Message "`'$(Join-Path $path $file.Name)`' not a valid font file type"
+                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`'$(Join-Path $path $file.Name)`' not a valid font file type"
                 ""
             }
         }
@@ -642,37 +626,44 @@ function Process-Arguments()
     else
     {
         "`'$($path)`' not found"
-         f_New-Log -logvar $logvar -status 'Error' -Message "`'$($path)`' not found"
+         f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`'$($path)`' not found"
         ""
         exit 1
     }
 }
 
-
 #*******************************************************************
 # Main Script
 #*******************************************************************
-Set-ExecutionPolicy unrestricted
 
+
+#region StandardFramework
+Set-Location $KworkingDir
+    
+. .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
-# $procname = $MyInvocation.Scriptname.Split(“\”)[2]
-# $Customer = $filePath
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
+$Customer = $MachineGroep.Split(“.”)[2]
 
-#region Object
+
 $logvar = New-Object -TypeName PSObject -Property @{
     'Domain' = $Domain 
     'MachineName' = $MachineName
-    'procname' = $path
-    #'Customer' = $Customer
-    'Names'= $unnamedArgs
-    'FontfileType'= $filePath
+    'procname' = $procname
+    'Customer' = $Customer
+    'Operator'= $Operator
+    'TDNumber'= $TDNumber
 }
-Write-Error $filePath
 
-f_New-Log -logvar $logvar -status 'Start' -Message 'Font Install Script'
-f_New-Log -logvar $logvar -status 'Info' -Message "Font `'$($fontRegistryPath)`' Register installation path"
-# f_New-Log -logvar $logvar -status 'Info' -Message "Font `'$( $fileName)`' ???Font naam"
+remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+#endregion StandardFramework
+
+#region Start log
+f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
+f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Font `'$($fontRegistryPath)`' Register installation path"
+#endregion Start log
 
 #Create new destination folder if (!(Test-Path -path C:\kworking\OrmTmp)) 
 #New-Item C:\kworking\OrmTmp -ItemType directory
@@ -683,6 +674,9 @@ f_New-Log -logvar $logvar -status 'Info' -Message "Font `'$($fontRegistryPath)`'
 $fontsFolderPath = Get-SpecialFolder($CSIDL_FONTS)
 Process-Arguments
 
+#region end log
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
+#endregion End Log
 
 
 
