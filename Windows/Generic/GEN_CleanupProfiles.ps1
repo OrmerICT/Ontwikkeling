@@ -134,7 +134,7 @@ foreach ($profile in $profileList){
                 if((Test-Path $profileImagePath\NTUSER.DAT) -eq $true){
                     if((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime -lt $profileAgeLimitDate){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Last write time of NTUSER.DAT: $((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime)"
-                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath)\NTUSER.DAT is older then $([math]::abs($ProfileAgeLimit)) dagen, profile:$($profileImagePath) will be removed"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath)\NTUSER.DAT is older then $([math]::abs($ProfileAgeLimit)) days, profile:$($profileImagePath) will be removed"
                         $removeLocalProfile = $true
                     }
                 }
@@ -199,7 +199,7 @@ foreach ($profile in $profileList){
                 }
             }
             else{
-                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Local profile exists and doesn't need to be removed"
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Local profile exists and doesn't need to be removed"
                 f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "No actions required"
             }
         }
