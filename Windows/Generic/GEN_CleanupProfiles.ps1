@@ -153,8 +153,9 @@ foreach ($profile in $profileList){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
                         Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
                         if((Test-Path $profileImagePath) -eq $true){
-                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured during the removal of the local profile"
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured during the removal of the local profile. Resetting profile removal action"                            
                             $removeLocalProfile = $false
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
                         }
                         else{
                             f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "$($profileImagePath) removed succesfully"
@@ -199,7 +200,7 @@ foreach ($profile in $profileList){
             }
             else{
                 f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Local profile exists and doesn't need to be removed"
-                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "No actions required"
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "No actions required"
             }
         }
         else{
