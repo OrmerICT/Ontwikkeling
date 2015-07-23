@@ -1,17 +1,23 @@
-﻿Function Global:WriteToLog
-{param ([string]$logentry,[string]$messageType)
-    $logfile = "C:\kworking\CleanupProfilesFromRegistry.log" #bepaal logfile waar diagnostische informatie in wordt weggeschreven
-    if ($messageType -eq "INF"){
-        (Get-Date -Format "dd-MM-yyyy:hh:mm:ss").ToString() + "`t" + "(INF)" + "`t" + $logentry | Out-File $logfile -Append
-    }
-    if ($messageType -eq "ERR"){
-        (Get-Date -Format "dd-MM-yyyy:hh:mm:ss").ToString() + "`t" + "(ERR)" + "`t" + $logentry | Out-File $logfile -Append
-    }
-    if ($messageType -ne "INF" -and $messageType -ne "ERR"){     
-        (Get-Date -Format "dd-MM-yyyy:hh:mm:ss").ToString() + "`t" + $logentry | Out-File $logfile -Append
-    }    
-}
+﻿[cmdletbinding()]
+param (
+    [parameter(mandatory=$false)]
+    [string]$Operator,
 
+    [parameter(mandatory=$false)]
+    [string]$MachineGroep,
+
+    [parameter(mandatory=$false)]
+    [string]$TDNumber,
+
+    [parameter(mandatory=$true)]
+    [string]$KworkingDir,
+
+    [parameter(mandatory=$true)]
+    [ValidateRange(1,31)] 
+    [int]$ProfileAgeLimit
+)
+
+#region Functions
 Function Get-LogonStatus($userName){    
     $users = Get-WmiObject Win32_Process -Filter "Name = 'explorer.exe'"
     $loggedOnUsers = ,@()   
@@ -58,14 +64,42 @@ Function Fix-UnremovableProfileFolders{
                 $folder.SetAccessControl($acl) | Out-Null
             }
             Catch{
-                WriteToLog "Error setting ACL on $($folder.FullName)" "ERR"
+                f_New-Log -logvar $logvar -status 'Failure' -LogDir $KworkingDir -Message "Error setting ACL on $($folder.FullName)"
             }
         }
     }
 }
+#endregion
+
+#region StandardFramework
+Set-Location $KworkingDir
+    
+. .\WriteLog.ps1
+$Domain = $env:USERDOMAIN
+$MachineName = $env:COMPUTERNAME
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
+$Customer = $MachineGroep.Split(“.”)[2]
+
+
+$logvar = New-Object -TypeName PSObject -Property @{
+    'Domain' = $Domain 
+    'MachineName' = $MachineName
+    'procname' = $procname
+    'Customer' = $Customer
+    'Operator'= $Operator
+    'TDNumber'= $TDNumber
+}
+
+Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Executing: $($KworkingDir)\$($procname) Script"
+#endregion StandardFramework
+    
+#region Execution
 
 #specify age limit for user profiles
-$profileAgeLimit = -14
+$profileAgeLimit = -$ProfileAgeLimit
+f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum age for existing user profiles: $([math]::abs($ProfileAgeLimit)) days"
 
 #cleanup registry
 $profileAgeLimitDate = (Get-Date).AddDays($profileAgeLimit)
@@ -77,33 +111,35 @@ foreach ($profile in $profileList){
     $removeLocalProfile = $false
     $profileImagePathExists = $true    
 
-    WriteToLog "Registry key:$($profileName)" "INF"
-    WriteToLog "Gebruiker:$($profileImagePath)" "INF"
+    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Registry key:$($profileName)"
+    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "User profile:$($profileImagePath)"
 
     if ($profileName -match "S-1-5-21" -and $profileName.EndsWith("-500") -eq $false){    
         if ($profileName.Substring($profileName.Length - 3, 3).ToUpper() -eq "BAK"){
-            WriteToLog "Naam van het profiel eindigt op .BAK, verwijder lokaal profiel EN registry keys" "INF"
+            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Profile name ends with .BAK, local profile AND registry keys will be removed"
             $removeLocalProfile = $true
         }
-        WriteToLog "`$removeLocalProfile:$($removeLocalProfile)" "INF"
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
        
         if ($profileImagePath){
-            WriteToLog "profileImagePath:$($profileImagePath)" "INF"  
+            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "profileImagePath:$($profileImagePath)"  
               
             if (!(Test-Path $profileImagePath)){                
-                WriteToLog "$($profileImagePath) bestaat niet, registry key:$($profile.Name) wordt verwijderd" "INF"
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) doesn't exist, registry key:$($profile.Name) will be removed"
                 $profileImagePathExists = $false
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "`$profileImagePathExists:$($profileImagePathExists)"
             }
             else{
                 Fix-UnremovableProfileFolders -UserProfileFolder (Get-item $profileImagePath)
                 if((Test-Path $profileImagePath\NTUSER.DAT) -eq $true){
                     if((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime -lt $profileAgeLimitDate){
-                        WriteToLog "$($profileImagePath)\NTUSER.DAT is ouder dan $($profileAgeLimit) dagen, profiel:$($profileImagePath) kan worden verwijderd" "INF"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Last write time of NTUSER.DAT: $((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime)"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath)\NTUSER.DAT is older then $([math]::abs($ProfileAgeLimit)) dagen, profile:$($profileImagePath) will be removed"
                         $removeLocalProfile = $true
                     }
                 }
                 else{
-                    WriteToLog "$($profileImagePath) bestaat, maar $($profileImagePath)\NTUSER.DAT bestaat niet, profiel:$($profileImagePath) kan worden verwijderd" "INF"
+                    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists, but $($profileImagePath)\NTUSER.DAT doesn't exist, profile:$($profileImagePath) will be removed"
                     $removeLocalProfile = $true
                 }
                 if($removeLocalProfile -eq $true){
@@ -111,64 +147,69 @@ foreach ($profile in $profileList){
                     $profileUser = (Get-Item $profileImagePath).Name
                     $logonStatus = Get-LogonStatus -userName $profileUser
                     if($logonStatus -eq $false){
-                        WriteToLog "$($profileUser) is niet ingelogd" "INF"
-                        WriteToLog "$($profileImagePath) bestaat en `$removeLocalProfile = `$true, registry key:$($profile.Name) en $($profileImagePath) worden verwijderd" "INF"
-                        WriteToLog "$($profileImagePath) wordt verwijderd" "INF"                        
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is not logged in"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists and `$removeLocalProfile = `$true, registry key:$($profile.Name) AND $($profileImagePath) will be removed"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) wordt verwijderd"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
                         Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
                         if((Test-Path $profileImagePath) -eq $true){
-                            WriteToLog "Er is een fout opgetreden bij het verwijderen van het lokale profiel" "ERR"
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured during the removal of the local profile"
                             $removeLocalProfile = $false
+                        }
+                        else{
+                            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "$($profileImagePath) removed succesfully"
                         }
                         #Remove-Item -Path $profileImagePath -Force -Recurse -ErrorAction SilentlyContinue -ErrorVariable removeLocalProfileError
                         #if($removeLocalProfileError){
-                        #    WriteToLog "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)" "ERR"
+                        #    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)"
                         #}
                     }
                     else{
-                        WriteToLog "$($profileUser) is ingelogd, er worden geen acties uitgevoerd" "INF"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is currently logged in, no actions will be performed"
                         $removeLocalProfile = $false
                     }
                 }            
             }
             if ($profileImagePathExists -eq $false -or $removeLocalProfile -eq $true){
-                WriteToLog "Registry key:$($profile.Name) wordt verwijderd" "INF"
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Registry key:$($profile.Name) will be removed"
                 Remove-Item "Registry::$($profile.Name)" -ErrorAction SilentlyContinue -ErrorVariable removeProfileKeyError -Recurse
                 if(!($removeProfileKeyError)){
-                    WriteToLog "Registry key succesvol verwijderd" "INF"
+                    f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Registry key:$($profile.Name) removed succesfully"
                     if($profileGuid){
-                        WriteToLog "profileGuid:$($profileGuid)" "INF"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "profileGuid:$($profileGuid)"
                         $profileGuidPath = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileGuid\$($profileGuid)"                                   
                         if (Test-Path -Path "Registry::$($profileGuidPath)"){
-                            WriteToLog "$($profileGuidPath) bestaat, registry key wordt verwijderd" "INF"
+                            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Registry key: $($profileGuidPath) exists, registry key will be removed"
                             Remove-Item "Registry::$($profileGuidPath)" -ErrorAction SilentlyContinue -ErrorVariable removeProfileGuidKeyError -Recurse
                             if(!($removeProfileGuidKeyError)){
-                                WriteToLog "Registry key succesvol verwijderd" "INF"
+                                f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Registry key:$($profileGuidPath) removed succesfully"
                             }
                             else{
-                                WriteToLog "Fout bij verwijderen registry key:$($removeProfileGuidKeyError[0].Exception)" "ERR"
+                                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while removing registry key:$($removeProfileGuidKeyError[0].Exception)"
                             }
                         }
                     }    
                     else{
-                        WriteToLog "profileGuid waarde bestaat niet of kan niet worden uitgelezen" "ERR"
+                        f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "profileGuid value doesn't exist or can't be read"
                     }
                 }
                 else{
-                    WriteToLog "Fout bij verwijderen registry key:$($removeProfileKeyError[0].Exception)" "ERR"
+                    f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while removing registry key:$($removeProfileKeyError[0].Exception)"
                 }
             }
             else{
-                WriteToLog "Lokaal profiel bestaat en hoeft niet verwijderd te worden" "INF"
-                WriteToLog "Geen acties noodzakelijk" "INF"
+                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Local profile exists and doesn't need to be removed"
+                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "No actions required"
             }
         }
         else{
-            WriteToLog "ProfileImagePath waarde bestaat niet of kan niet worden uitgelezen" "ERR"
+            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "ProfileImagePath value doesn't exist or can't be read"
         }
     } 
     else{
-        WriteToLog "$($profileName) is geen Domeinaccount" "INF"
-        WriteToLog "Geen acties noodzakelijk" "INF"
-    }   
-    WriteToLog "------------------------------------------------------"  
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileName) is not a Domain User"
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "No actions required"
+    }
 }
+f_New-Log -logvar $logvar -status 'Successs' -Message 'Procedure Completed' -LogDir $KworkingDir
+#endregion Execution

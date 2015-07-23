@@ -33,7 +33,7 @@ $logvar = New-Object -TypeName PSObject -Property @{
     'TDNumber'= $TDNumber
 }
 
-remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: `'$Kworking`' Script"
 #endregion StandardFramework
     
