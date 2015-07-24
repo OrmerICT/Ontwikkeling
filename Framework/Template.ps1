@@ -21,7 +21,7 @@ $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
 $GetProcName = Get-PSCallStack
 $procname = $GetProcname.Command
-$Customer = $MachineGroep.Split(“.”)[2]
+$Customer = $MachineGroep.Split('.')[2]
 
 
 $logvar = New-Object -TypeName PSObject -Property @{
