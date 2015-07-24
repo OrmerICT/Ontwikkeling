@@ -36,5 +36,6 @@
         UsedSpace   = "$('{0:N2}' -f ($csvinfo.Partition.UsedSpace / 1GB)) GB"
         PercentFree = "$('{0:N2}' -f ($csvinfo.Partition.PercentFree)) %"
       }
-   }
+    }
+  }
 }
