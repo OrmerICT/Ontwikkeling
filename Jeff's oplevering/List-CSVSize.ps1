@@ -9,6 +9,8 @@
   List-CSVSize -ClusterName 'Cluster01.domain.local'
   .EXAMPLE
   List-CSVSize 'Cluster01'
+  .EXAMPLE
+  List-CSVSize 'Cluster01' | ConvertTo-CSV | Out-File C:\kworking\CSVSize.csv
   .NOTES
   Version  :  0.1
   Customer :  Ormer ICT
