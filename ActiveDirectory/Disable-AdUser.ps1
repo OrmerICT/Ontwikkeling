@@ -114,4 +114,6 @@ f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: 
     Disable-ADAccount -Identity $UserName
 #endregion Disable Account
 
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Title: END `'$Kworking`' Script"
+#region end log
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
+#endregion End Log
