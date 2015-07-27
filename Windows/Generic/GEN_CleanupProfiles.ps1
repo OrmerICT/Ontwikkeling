@@ -120,6 +120,42 @@ Function Fix-UnremovableProfileFolders{
         }
     }
 }
+
+Function Close-FileHandles{
+    param (
+        [ValidateScript({if((Test-Path $_ -PathType 'Leaf') -eq $true -and ((Get-Item $_).Name.ToLower()) -eq "handle.exe"){Return $true}else{Return $false}})] 
+        [parameter(mandatory=$true)]
+        [string]$PathToHandleEXE,
+
+        [ValidateScript({(Test-Path $_ -PathType 'Container') -or (Test-Path $_ -PathType 'Leaf')})] 
+        [parameter(mandatory=$true)]
+        [string]$PathToProcess
+    )
+
+    #write the registry value to suppress the display of the license agreement, so handle can run attended
+    if((Test-Path "HKCU:\Software\Sysinternals\Handle") -eq $false){
+        New-Item -Path "HKCU:\Software\Sysinternals\Handle" -Force    
+    }
+    Set-ItemProperty -Path "HKCU:\Software\Sysinternals\Handle" -Name "EulaAccepted" -Value 1
+
+    #get the open handles for the file/folder
+    $handles = (& $PathToHandleEXE $PathToProcess)  
+
+    # Get the count of lines in the output 
+    $count=($handles.Count)-1    
+
+    #handle output starts at line 5
+    for ($i = 5; $i -le $count; $i++){ 
+        # Get the Process Id for each file        
+        $MYPID=($handles[$i].Substring(24,7)).Trim()
+
+        # Get the Hexadecimal ID for each open file              
+        $HEX=($handles[$i].Substring(41,14)).Trim()
+
+        # Close the open handle      
+        (& $PathToHandleEXE –c $HEX.ToString().Trim() –p $MYPID.ToString().Trim() -y)
+    }
+}
 #endregion
    
 #region Start log
@@ -181,20 +217,32 @@ foreach ($profile in $profileList){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is not logged in"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists and `$removeLocalProfile = `$true, registry key:$($profile.Name) AND $($profileImagePath) will be removed"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) wordt verwijderd"
-                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
-                        Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
-                        if((Test-Path $profileImagePath) -eq $true){
-                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured during the removal of the local profile. Resetting profile removal action"                            
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
+                        Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
+                        if(!($closeFileHandleError)){
+                            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
+                            f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
+                            Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
+                            if((Test-Path $profileImagePath) -eq $true){
+                                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "An error occured during the removal of the local profile. Resetting profile removal action"                            
+                                $removeLocalProfile = $false
+                                f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
+                            }
+                            else{
+                                f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "$($profileImagePath) removed succesfully"
+                            }
+                            #Remove-Item -Path $profileImagePath -Force -Recurse -ErrorAction SilentlyContinue -ErrorVariable removeLocalProfileError
+                            #if($removeLocalProfileError){
+                            #    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)"
+                            #}
+
+                        }
+                        else{
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while losing open file handles referencing $($profileImagePath):$($closeFileHandleError[0].Exception)"
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
                             $removeLocalProfile = $false
                             f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
                         }
-                        else{
-                            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "$($profileImagePath) removed succesfully"
-                        }
-                        #Remove-Item -Path $profileImagePath -Force -Recurse -ErrorAction SilentlyContinue -ErrorVariable removeLocalProfileError
-                        #if($removeLocalProfileError){
-                        #    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)"
-                        #}
                     }
                     else{
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is currently logged in, no actions will be performed"
