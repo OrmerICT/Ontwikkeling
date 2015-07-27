@@ -1,5 +1,28 @@
-﻿[cmdletbinding()]
-param (
+﻿###############################################################################
+#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
+###############################################################################
+<#
+#******************************************************************************
+# File:     GEN_CleanupProfiles.ps1
+# Date:     07/27/2015
+# Version:  0.2
+#
+# Purpose:  PowerShell script to add a new user.
+#
+# Usage:    GEN_CleanupProfiles.ps1
+# Needed: Remote administration tools to load the server manager
+#
+# Copyright (C) 2015 Ormer ICT 
+#
+# Revisions:
+# ----------
+# 0.1.0   07/17/2015   Created script.
+# 0.2.0   07/27/2015   Logging aangepast (By PvdW)   
+#>#******************************************************************************
+
+#region start StandardFramework
+[cmdletbinding()]
+param(
     [parameter(mandatory=$false)]
     [string]$Operator,
 
@@ -9,13 +32,39 @@ param (
     [parameter(mandatory=$false)]
     [string]$TDNumber,
 
-    [parameter(mandatory=$true)]
-    [string]$KworkingDir,
+    [parameter(mandatory=$false)]
+    [string]$Username,
 
     [parameter(mandatory=$true)]
+    [string]$KworkingDir,
+  
+#Procedure Vars
+    [parameter(mandatory=$true)]
     [ValidateRange(1,31)] 
-    [int]$ProfileAgeLimit
+    [int]$ProfileAgeLimit,
+
+    [System.IO.FileSystemInfo]$UserProfileFolder
 )
+
+Set-Location $KworkingDir
+. .\WriteLog.ps1
+$Domain = $env:USERDOMAIN
+$MachineName = $env:COMPUTERNAME
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
+$Customer = $MachineGroep.Split(“.”)[2]
+
+$logvar = New-Object -TypeName PSObject -Property @{
+    'Domain' = $Domain 
+    'MachineName' = $MachineName
+    'procname' = $procname
+    'Customer' = $Customer
+    'Operator'= $Operator
+    'TDNumber'= $TDNumber
+}
+remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+#endregion StandardFramework
+
 
 #region Functions
 Function Get-LogonStatus($userName){    
@@ -35,10 +84,14 @@ Function Get-LogonStatus($userName){
     Return $false  
 }
 
+#endregion Comments
+
+#region FicremovableProfileFolders
 Function Fix-UnremovableProfileFolders{
-  param (
-    [System.IO.FileSystemInfo]$UserProfileFolder
-  )
+#[cmdletbinding()]
+Write-host  $KworkingDir  
+s
+ 
     $unremovableFolders = @()
     $unremovableFolders+= @("NTUSER.DAT")
     $unremovableFolders+= @("Application Data")
@@ -70,38 +123,18 @@ Function Fix-UnremovableProfileFolders{
     }
 }
 #endregion
+   
+#region Start log
+    f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
+#endregion Start log
 
-#region StandardFramework
-Set-Location $KworkingDir
-    
-. .\WriteLog.ps1
-$Domain = $env:USERDOMAIN
-$MachineName = $env:COMPUTERNAME
-$GetProcName = Get-PSCallStack
-$procname = $GetProcname.Command
-$Customer = $MachineGroep.Split(“.”)[2]
-
-
-$logvar = New-Object -TypeName PSObject -Property @{
-    'Domain' = $Domain 
-    'MachineName' = $MachineName
-    'procname' = $procname
-    'Customer' = $Customer
-    'Operator'= $Operator
-    'TDNumber'= $TDNumber
-}
-
-Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
-f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Executing: $($KworkingDir)\$($procname) Script"
-#endregion StandardFramework
-    
-#region Execution
-
+#region start CleanupProfiles
 #specify age limit for user profiles
-$profileAgeLimit = -$ProfileAgeLimit
+$profileAgeLimit = $ProfileAgeLimit
 f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum age for existing user profiles: $([math]::abs($ProfileAgeLimit)) days"
 
 #cleanup registry
+#Set-Location $KworkingDir
 $profileAgeLimitDate = (Get-Date).AddDays($profileAgeLimit)
 $profileList = Get-ChildItem -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
 foreach ($profile in $profileList){
@@ -212,5 +245,9 @@ foreach ($profile in $profileList){
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "No actions required"
     }
 }
-f_New-Log -logvar $logvar -status 'Successs' -Message 'Procedure Completed' -LogDir $KworkingDir
-#endregion Execution
+
+#endregion start CleanupProfiles
+
+#region end log
+        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
+#endregion End Log
