@@ -1,28 +1,5 @@
-﻿###############################################################################
-#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
-###############################################################################
-<#
-#******************************************************************************
-# File:     GEN_CleanupProfiles.ps1
-# Date:     07/27/2015
-# Version:  0.2
-#
-# Purpose:  PowerShell script to add a new user.
-#
-# Usage:    GEN_CleanupProfiles.ps1
-# Needed: Remote administration tools to load the server manager
-#
-# Copyright (C) 2015 Ormer ICT 
-#
-# Revisions:
-# ----------
-# 0.1.0   07/17/2015   Created script.
-# 0.2.0   07/27/2015   Logging aangepast (By PvdW)   
-#>#******************************************************************************
-
-#region start StandardFramework
-[cmdletbinding()]
-param(
+﻿[cmdletbinding()]
+param (
     [parameter(mandatory=$false)]
     [string]$Operator,
 
@@ -32,39 +9,13 @@ param(
     [parameter(mandatory=$false)]
     [string]$TDNumber,
 
-    [parameter(mandatory=$false)]
-    [string]$Username,
-
     [parameter(mandatory=$true)]
     [string]$KworkingDir,
-  
-#Procedure Vars
+
     [parameter(mandatory=$true)]
     [ValidateRange(1,31)] 
-    [int]$ProfileAgeLimit,
-
-    [System.IO.FileSystemInfo]$UserProfileFolder
+    [int]$ProfileAgeLimit
 )
-
-Set-Location $KworkingDir
-. .\WriteLog.ps1
-$Domain = $env:USERDOMAIN
-$MachineName = $env:COMPUTERNAME
-$GetProcName = Get-PSCallStack
-$procname = $GetProcname.Command
-$Customer = $MachineGroep.Split(“.”)[2]
-
-$logvar = New-Object -TypeName PSObject -Property @{
-    'Domain' = $Domain 
-    'MachineName' = $MachineName
-    'procname' = $procname
-    'Customer' = $Customer
-    'Operator'= $Operator
-    'TDNumber'= $TDNumber
-}
-remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
-#endregion StandardFramework
-
 
 #region Functions
 Function Get-LogonStatus($userName){    
@@ -84,12 +35,10 @@ Function Get-LogonStatus($userName){
     Return $false  
 }
 
-#endregion Comments
-
-#region FicremovableProfileFolders
 Function Fix-UnremovableProfileFolders{
-#[cmdletbinding()]
-
+  param (
+    [System.IO.FileSystemInfo]$UserProfileFolder
+  )
     $unremovableFolders = @()
     $unremovableFolders+= @("NTUSER.DAT")
     $unremovableFolders+= @("Application Data")
@@ -142,33 +91,64 @@ Function Close-FileHandles{
     $handles = (& $PathToHandleEXE $PathToProcess)  
 
     # Get the count of lines in the output 
-    $count=($handles.Count)-1    
+    $count=($handles.Count)-1
+    Write-Host "Count: $($count)"
+    Write-Host $handles[5]  
 
     #handle output starts at line 5
-    for ($i = 5; $i -le $count; $i++){ 
+    for ($i = 5; $i -le $count -and $count -gt 5; $i++){
         # Get the Process Id for each file        
         $MYPID=($handles[$i].Substring(24,7)).Trim()
 
         # Get the Hexadecimal ID for each open file              
         $HEX=($handles[$i].Substring(41,14)).Trim()
 
-        # Close the open handle      
-        (& $PathToHandleEXE –c $HEX.ToString().Trim() –p $MYPID.ToString().Trim() -y)
+        # Close the open handle and check the results   
+        $closeresult = (& $PathToHandleEXE -c $HEX -p $MYPID -y)        
+        if($closeresult[7].Trim() -eq "Handle closed."){
+            $result = $true
+        }
+    }
+    if($result -eq $true){
+        Return $true
+    }
+    else{
+        Return $false
     }
 }
 #endregion
-   
-#region Start log
-    f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
-#endregion Start log
 
-#region start CleanupProfiles
+#region StandardFramework
+Set-Location $KworkingDir
+    
+. .\WriteLog.ps1
+$Domain = $env:USERDOMAIN
+$MachineName = $env:COMPUTERNAME
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
+$Customer = $MachineGroep.Split(“.”)[2]
+
+
+$logvar = New-Object -TypeName PSObject -Property @{
+    'Domain' = $Domain 
+    'MachineName' = $MachineName
+    'procname' = $procname
+    'Customer' = $Customer
+    'Operator'= $Operator
+    'TDNumber'= $TDNumber
+}
+
+Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Executing: $($KworkingDir)\$($procname) Script"
+#endregion StandardFramework
+    
+#region Execution
+
 #specify age limit for user profiles
-$profileAgeLimit = $ProfileAgeLimit
+$profileAgeLimit = -$ProfileAgeLimit
 f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum age for existing user profiles: $([math]::abs($ProfileAgeLimit)) days"
 
 #cleanup registry
-#Set-Location $KworkingDir
 $profileAgeLimitDate = (Get-Date).AddDays($profileAgeLimit)
 $profileList = Get-ChildItem -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
 foreach ($profile in $profileList){
@@ -197,6 +177,7 @@ foreach ($profile in $profileList){
                 f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "`$profileImagePathExists:$($profileImagePathExists)"
             }
             else{
+                f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Fixing unremovable profile folders in profile $($profileImagePath)"
                 Fix-UnremovableProfileFolders -UserProfileFolder (Get-item $profileImagePath)
                 if((Test-Path $profileImagePath\NTUSER.DAT) -eq $true){
                     if((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime -lt $profileAgeLimitDate){
@@ -218,9 +199,9 @@ foreach ($profile in $profileList){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists and `$removeLocalProfile = `$true, registry key:$($profile.Name) AND $($profileImagePath) will be removed"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) wordt verwijderd"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
-                        Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
-                        if(!($closeFileHandleError)){
-                            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
+                        #$closeFileHandlesResult = Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
+                        #if(!($closeFileHandleError) -and ($closeFileHandlesResult -eq $true)){
+                            #f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
                             f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
                             Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
                             if((Test-Path $profileImagePath) -eq $true){
@@ -235,13 +216,12 @@ foreach ($profile in $profileList){
                             #if($removeLocalProfileError){
                             #    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)"
                             #}
-
-                        }
-                        else{
-                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while losing open file handles referencing $($profileImagePath):$($closeFileHandleError[0].Exception)"
-                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
-                            $removeLocalProfile = $false
-                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
+                        #}
+                        #else{
+                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while closing open file handles referencing $($profileImagePath):$($closeFileHandleError[0].Exception)"
+                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
+                            #$removeLocalProfile = $false
+                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
                         }
                     }
                     else{
@@ -291,9 +271,5 @@ foreach ($profile in $profileList){
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "No actions required"
     }
 }
-
-#endregion start CleanupProfiles
-
-#region end log
-        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
-#endregion End Log
+f_New-Log -logvar $logvar -status 'Successs' -Message 'Procedure Completed' -LogDir $KworkingDir
+#endregion Execution
