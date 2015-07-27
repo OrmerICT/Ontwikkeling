@@ -198,10 +198,10 @@ foreach ($profile in $profileList){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is not logged in"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists and `$removeLocalProfile = `$true, registry key:$($profile.Name) AND $($profileImagePath) will be removed"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) wordt verwijderd"
-                        #f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
-                        #$closeFileHandlesResult = Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
-                        #if(!($closeFileHandleError) -and ($closeFileHandlesResult -eq $true)){
-                            #f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
+                        $closeFileHandlesResult = Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
+                        if(!($closeFileHandleError) -and ($closeFileHandlesResult -eq $true)){
+                            f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
                             f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Executing: CMD.exe /C RMDIR /S /Q `"$($profileImagePath)`""                     
                             Start-Process -FilePath "CMD.exe" -ArgumentList "/C RMDIR /S /Q `"$($profileImagePath)`"" -Wait -NoNewWindow
                             if((Test-Path $profileImagePath) -eq $true){
@@ -216,13 +216,13 @@ foreach ($profile in $profileList){
                             #if($removeLocalProfileError){
                             #    f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Lokaal profiel kon niet worden verwijderd:$($removeLocalProfileError[0].Exception)"
                             #}
-                        #}
-                        #else{
-                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while closing open file handles referencing $($profileImagePath):$($closeFileHandleError[0].Exception)"
-                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
-                            #$removeLocalProfile = $false
-                            #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
-                        #}
+                        }
+                        else{
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Error while closing open file handles referencing $($profileImagePath):$($closeFileHandleError[0].Exception)"
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
+                            $removeLocalProfile = $false
+                            f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
+                        }
                     }
                     else{
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is currently logged in, no actions will be performed"
