@@ -89,9 +89,7 @@ Function Get-LogonStatus($userName){
 #region FicremovableProfileFolders
 Function Fix-UnremovableProfileFolders{
 #[cmdletbinding()]
-Write-host  $KworkingDir  
-s
- 
+
     $unremovableFolders = @()
     $unremovableFolders+= @("NTUSER.DAT")
     $unremovableFolders+= @("Application Data")
