@@ -92,8 +92,6 @@ Function Close-FileHandles{
 
     # Get the count of lines in the output 
     $count=($handles.Count)-1
-    Write-Host "Count: $($count)"
-    Write-Host $handles[5]  
 
     #handle output starts at line 5
     for ($i = 5; $i -le $count -and $count -gt 5; $i++){
@@ -145,11 +143,11 @@ f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Executi
 #region Execution
 
 #specify age limit for user profiles
-$profileAgeLimit = -$ProfileAgeLimit
-f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum age for existing user profiles: $([math]::abs($ProfileAgeLimit)) days"
+f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum age for existing user profiles: $($ProfileAgeLimit) days"
 
 #cleanup registry
-$profileAgeLimitDate = (Get-Date).AddDays($profileAgeLimit)
+$profileAgeLimitDate = (Get-Date).AddDays(($profileAgeLimit * -1))
+f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Maximum date for existing user profiles: $($profileAgeLimitDate)"
 $profileList = Get-ChildItem -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
 foreach ($profile in $profileList){
     $profileName = $profile.Name      
@@ -181,8 +179,8 @@ foreach ($profile in $profileList){
                 Fix-UnremovableProfileFolders -UserProfileFolder (Get-item $profileImagePath)
                 if((Test-Path $profileImagePath\NTUSER.DAT) -eq $true){
                     if((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime -lt $profileAgeLimitDate){
-                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Last write time of NTUSER.DAT: $((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime)"
-                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath)\NTUSER.DAT is older then $([math]::abs($ProfileAgeLimit)) days, profile:$($profileImagePath) will be removed"
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Last write time of NTUSER.DAT: $((Get-Item $profileImagePath\NTUSER.DAT).LastWriteTime)"                        
+                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath)\NTUSER.DAT is older then $($profileAgeLimitDate), profile:$($profileImagePath) will be removed"
                         $removeLocalProfile = $true
                     }
                 }
@@ -198,7 +196,7 @@ foreach ($profile in $profileList){
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is not logged in"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) exists and `$removeLocalProfile = `$true, registry key:$($profile.Name) AND $($profileImagePath) will be removed"
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileImagePath) wordt verwijderd"
-                        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
+                        #f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Closing open file handles referencing $($profileImagePath)"
                         #$closeFileHandlesResult = Close-FileHandles -PathToHandleEXE "$($KworkingDir)\Handle.exe" -PathToProcess $profileImagePath -ErrorAction SilentlyContinue -ErrorVariable closeFileHandleError
                         #if(!($closeFileHandleError) -and ($closeFileHandlesResult -eq $true)){
                             #f_New-Log -logvar $logvar -status 'Success' -LogDir $KworkingDir -Message "Sucessfully closed open file handles referencing $($profileImagePath)"
@@ -222,7 +220,7 @@ foreach ($profile in $profileList){
                             #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Resetting profile removal action" 
                             #$removeLocalProfile = $false
                             #f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "`$removeLocalProfile:$($removeLocalProfile)"
-                        }
+                        #}
                     }
                     else{
                         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "$($profileUser) is currently logged in, no actions will be performed"
