@@ -4,8 +4,8 @@
 <#
 #******************************************************************************
 # File:     Add_Feature.ps1
-# Date:     07/28/2015
-# Version:  0.1
+# Date:     07/29/2015
+# Version:  0.2
 #
 # Purpose:  PowerShell script to add a new Feature to a Windows server(s).
 #
@@ -17,7 +17,7 @@
 # Revisions:
 # ----------
 # 0.1.0   07/28/2015   Created script. (By PvdW)
-#    
+# 0.2.0   07/29/2015   (By PvdW)
 #>#******************************************************************************
 #region Start Parameters
 [cmdletbinding()]
