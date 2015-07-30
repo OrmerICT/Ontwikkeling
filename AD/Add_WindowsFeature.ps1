@@ -32,6 +32,9 @@ param (
     [parameter(mandatory=$false)]
     [string]$TDNumber,
 
+    [parameter(mandatory=$false)]
+    [string]$FeatureChoice,
+    
     #[parameter(mandatory=$false)]
     #[string]$Procname,
 
