@@ -3,20 +3,21 @@
 ###############################################################################
 <#
 #******************************************************************************
-# File:     Add_Feature.ps1
-# Date:     07/28/2015
-# Version:  0.1
+# File:     Add_WindowsFeature.ps1
+# Date:     07/30/2015
+# Version:  0.2
 #
 # Purpose:  PowerShell script to add a new Feature to a Windows server(s).
 #
-# Usage:    Add_Feature.ps1
-# Needed: Remote administration tools to load the server manager
+# Usage:    Add_WindowsFeature.ps1
+# Needed: Remote administration tools to add a new Feature to a Windows server(s)
 #
 # Copyright (C) 2015 Ormer ICT 
-#
+# https://social.technet.microsoft.com/forums/windowsserver/en-US/26cc0a4e-306c-4a95-8313-ad6c09120e59/powershell-eindows-form-drop-down-selection
 # Revisions:
 # ----------
 # 0.1.0   07/28/2015   Created script. (By PvdW)
+# 0.2.0   07/30/2015   Updated script. (By PvdW)
 #    
 #>#******************************************************************************
 #region Start Parameters
@@ -44,7 +45,6 @@ param (
 #endregion Start Parameters
 
 
-
 #region Function Show-Usage
 function Show-Usage()
 {
@@ -55,10 +55,10 @@ This script is used to Add Windows Features.
 Usage:
 
 Help:
-Add_Feature.ps1 -help 
+Add_WindowsFeature.ps1 -help 
 
 Install:
-Add_Feature.ps1 -kworking -TDnumber
+Add_WindowsFeature.ps1 -kworking -TDnumber
 
 Parameters:
 
@@ -97,9 +97,26 @@ function Process-Arguments()
 function Return-DropDown {
  $script:Choice = $DropDown.SelectedItem.ToString()
  $Form.Close()
-# Write-Host $Choice
+ Write-Host $Choice
 }
 #endregion Function Dropdown
+
+function OnApplicationLoad {
+	#Note: This function runs before the form is created
+	#Note: To get the script directory in the Packager use: Split-Path $hostinvocation.MyCommand.path
+	#Note: To get the console output in the Packager (Windows Mode) use: $ConsoleOutput (Type: System.Collections.ArrayList)
+	#Important: Form controls cannot be accessed in this function
+	#TODO: Add snapins and custom code to validate the application load
+	
+	return $true #return true for success or false for failure
+}
+
+function OnApplicationExit {
+	#Note: This function runs after the form is closed
+	#TODO: Add custom code to clean up and unload snapins when the application exits
+	
+	$script:ExitCode = 0 #Set the exit code for the Packager
+}
 
 function GenerateForm {
 
@@ -140,7 +157,7 @@ function GenerateForm {
 	$handler_button1_Click={
 	#TODO: Place custom script here
 		#$x = Import-Csv -Delimiter ";" -Path C:\kworking\FeaturesW2K12.txt | ? { $_.name -eq $combobox1.Text } | Select -first 1
-        $x = Import-Csv -Path C:\kworking\FeaturesW2K12.csv | ? { $_.name -eq $combobox1.Text } | Select -first 2
+        $x = Import-Csv -Path C:\kworking\FeaturesW2K12.csv | ? { $_.name -eq $combobox1.Text } | Select -first 1
 	#	$label1.Text = (Test-Connection -ComputerName $x.server -Quiet).toString()
         $FeatureChoice = $combobox1.Text
         Write-Host $combobox1.Text
@@ -226,19 +243,6 @@ function GenerateForm {
 
 } #End Function
 
-#region Start log
-    f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
-#endregion Start log
-
-#Call OnApplicationLoad to initialize
-if(OnApplicationLoad -eq $true)
-{
-	#Create the form
-	GenerateForm | Out-Null
-	#Perform cleanup
-	OnApplicationExit
-}
-
 #region StandardFramework
 Set-Location $KworkingDir
     
@@ -265,6 +269,15 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
     f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
 #endregion Start log
 
+#region start Call OnApplicationLoad to initialize
+if(OnApplicationLoad -eq $true)
+{
+	#Create the form
+	GenerateForm | Out-Null
+	#Perform cleanup
+	OnApplicationExit
+}
+#endregion OnApplicationLoad to initialize
 
 
 #region end log
