@@ -22,7 +22,7 @@ function Format-LogDateTime
         $Day = "0$($DateTime.Day)"
     }
     else{
-        $May = "$($DateTime.Day)"
+        $Day = "$($DateTime.Day)"
     }
 
     if(($DateTime.Month -lt 10)){
