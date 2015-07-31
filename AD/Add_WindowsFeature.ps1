@@ -32,7 +32,7 @@ param (
     [parameter(mandatory=$false)]
     [string]$TDNumber,
 
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$FeatureChoice,
     
     #[parameter(mandatory=$false)]
