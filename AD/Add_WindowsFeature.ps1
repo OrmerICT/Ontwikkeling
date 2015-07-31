@@ -127,7 +127,7 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 #endregion Start log
 
 #region start Feature install
- Import-Module ServerManager
+ Import-Module ServerManager -Force; 
  f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Install Feature:`'$($FeatureChoice)`'"
  Add-WindowsFeature $FeatureChoice -ErrorAction Continue -ErrorVariable ProcessError
  Write-host "$ProcessError" 
