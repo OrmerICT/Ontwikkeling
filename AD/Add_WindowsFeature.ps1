@@ -125,8 +125,9 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 #endregion Start log
 
 
- Add-WindowsFeature -Name $FeatureChoice -ErrorAction SilentlyContinue
- f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'"
+ Import-Module ServerManager
+ Install-WindowsFeature -name $FeatureChoice -ErrorAction SilentlyContinue
+ f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'"
 
 #region end log
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
