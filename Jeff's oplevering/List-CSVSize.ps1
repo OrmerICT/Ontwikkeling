@@ -1,35 +1,55 @@
-﻿function List-CSVSize {
-<#
-  .SYNOPSIS
-  List the data size information of Cluster Shared Volumes.
-  .DESCRIPTION
-  List the data size information of Cluster Shared Volumes in GB, such as the size,
-  free space, used space and the percentage of free space.
-  .EXAMPLE
-  List-CSVSize -ClusterName 'Cluster01.domain.local'
-  .EXAMPLE
-  List-CSVSize 'Cluster01'
-  .EXAMPLE
-  List-CSVSize 'Cluster01' | ConvertTo-CSV | Out-File C:\kworking\CSVSize.csv
-  .NOTES
-  Version  :  0.1
-  Customer :  Ormer ICT
-  Author   :  Jeff Wouters
-#>
-  [cmdletbinding()]
-  param
-  (
-    [parameter(
-      Mandatory=$true,
-      Position=0
-    )]
+﻿[cmdletbinding()]
+param (
+    [parameter(mandatory=$false)]
+    [string]$Operator,
+
+    [parameter(mandatory=$false)]
+    [string]$MachineGroep,
+
+    [parameter(mandatory=$false)]
+    [string]$TDNumber,
+
+    [parameter(mandatory=$true)]
+    [string]$KworkingDir,
+
+    [parameter(mandatory=$true)]
     [string]$ClusterName
-  )
-  Import-Module FailoverClusters
-  foreach ( $csv in (Get-ClusterSharedVolume -Cluster $ClusterName))
+)
+
+#region StandardFramework
+Set-Location $KworkingDir
+    
+. .\WriteLog.ps1
+$Domain = $env:USERDOMAIN
+$MachineName = $env:COMPUTERNAME
+$GetProcName = Get-PSCallStack
+$procname = $GetProcname.Command
+$Customer = $MachineGroep.Split('.')[2]
+
+
+$logvar = New-Object -TypeName PSObject -Property @{
+    'Domain' = $Domain 
+    'MachineName' = $MachineName
+    'procname' = $procname
+    'Customer' = $Customer
+    'Operator'= $Operator
+    'TDNumber'= $TDNumber
+}
+
+Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: `'$Kworking`' Script"
+#endregion StandardFramework
+    
+#region Execution
+f_New-Log -logvar $logvar -status 'Info' -Message 'Hello world' -LogDir $KworkingDir
+Import-Module FailoverClusters
+try {
+  foreach ($csv in (Get-ClusterSharedVolume -Cluster $ClusterName))
   {
-    foreach ( $csvinfo in ($csv | Select-Object -Property Name -ExpandProperty SharedVolumeInfo) )
+    f_New-Log -logvar $logvar -status 'Info' -Message "Getting disk utilization of $($CSV.Name)" -LogDir $KworkingDir
+    foreach ($csvinfo in ($csv | Select-Object -Property Name -ExpandProperty SharedVolumeInfo))
     {
+      f_New-Log -logvar $logvar -status 'Info' -Message "Getting CSVInfo of $($CSV.Name)" -LogDir $KworkingDir
       New-Object PSObject -Property @{
         Name        = $csv.Name
         Path        = $csvinfo.FriendlyVolumeName
@@ -41,3 +61,8 @@
     }
   }
 }
+catch
+{
+  f_New-Log -logvar $logvar -status 'Error' -Message "Unable to query CSV from cluster $ClusterName" -LogDir $KworkingDir
+}
+#endregion Execution

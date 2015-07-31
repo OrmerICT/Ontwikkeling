@@ -1,4 +1,4 @@
-﻿[cmdletbinding()]
+[cmdletbinding()]
 param (
     [parameter(mandatory=$false)]
     [string]$Operator,
@@ -44,27 +44,14 @@ f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: 
 #endregion StandardFramework
     
 #region Execution
+# Remove ServicePack installation files - After this an ServicePack can't be uninstalled!!!
+f_New-Log -logvar $logvar -status 'Info' -Message 'Removing old installation files from OS Service Pack(s)' -LogDir $KworkingDir
 try {
-  foreach ($File in (Get-ChildItem -Path $Path))
-  {
-    if (!$File.PSIsContainerCopy) 
-    {
-      if ($File.LastWriteTime -lt ($(Get-Date).Adddays(-$days))) 
-      {
-        f_New-Log -logvar $logvar -status 'Info' -Message "Removing logfile $File" -LogDir $KworkingDir
-        try
-        {
-          Remove-Item -Path $File -Force
-          f_New-Log -logvar $logvar -status 'Success' -Message "Removed logfile $File" -LogDir $KworkingDir
-        } catch {
-          f_New-Log -logvar $logvar -status 'Error' -Message "Unable to remove logfile $File" -LogDir $KworkingDir
-        }
-      }
-    }
-  } 
+  dism /online /cleanup-image /spsuperseded /NoRestart /Quiet
+  f_New-Log -logvar $logvar -status 'Success' -Message 'Removed old installation files from OS Service Pack(s)' -LogDir $KworkingDir
 }
 catch
 {
-  f_New-Log -logvar $logvar -status 'Error' -Message "Unable to query log file path $Path" -LogDir $KworkingDir
+  f_New-Log -logvar $logvar -status 'Error' -Message 'Unable to remove old installation files from OS Service Pack(s)' -LogDir $KworkingDir
 }
 #endregion Execution

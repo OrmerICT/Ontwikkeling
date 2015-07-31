@@ -44,27 +44,15 @@ f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title: 
 #endregion StandardFramework
     
 #region Execution
-try {
-  foreach ($File in (Get-ChildItem -Path $Path))
-  {
-    if (!$File.PSIsContainerCopy) 
-    {
-      if ($File.LastWriteTime -lt ($(Get-Date).Adddays(-$days))) 
-      {
-        f_New-Log -logvar $logvar -status 'Info' -Message "Removing logfile $File" -LogDir $KworkingDir
-        try
-        {
-          Remove-Item -Path $File -Force
-          f_New-Log -logvar $logvar -status 'Success' -Message "Removed logfile $File" -LogDir $KworkingDir
-        } catch {
-          f_New-Log -logvar $logvar -status 'Error' -Message "Unable to remove logfile $File" -LogDir $KworkingDir
-        }
-      }
-    }
-  } 
+# If an OS upgrade was performed, this removes old mountpoints from this upgrade.
+f_New-Log -logvar $logvar -status 'Info' -Message 'Removing old mountpoints from OS upgrade' -LogDir $KworkingDir
+try
+{
+  dism /Cleanup-Mountpoints
+  f_New-Log -logvar $logvar -status 'Success' -Message 'Removed old mountpoints from OS upgrade' -LogDir $KworkingDir
 }
 catch
 {
-  f_New-Log -logvar $logvar -status 'Error' -Message "Unable to query log file path $Path" -LogDir $KworkingDir
+  f_New-Log -logvar $logvar -status 'Error' -Message 'Unable to remove old mountpoints from OS upgrade' -LogDir $KworkingDir
 }
 #endregion Execution
