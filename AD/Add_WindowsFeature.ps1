@@ -1,4 +1,5 @@
-﻿###############################################################################
+﻿
+###############################################################################
 #   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
 ###############################################################################
 <#
@@ -48,6 +49,7 @@ param (
 )
 #endregion Start Parameters
 
+start-transcript -path c:\windows\temp\transcriptlog.txt 
 
 #region Function Show-Usage
 function Show-Usage()
@@ -140,3 +142,4 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 #region end log
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
 #endregion End Log
+Stop-transcript -path c:\windows\temp\transcriptlog.txt
