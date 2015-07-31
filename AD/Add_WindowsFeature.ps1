@@ -124,16 +124,18 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
     f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
 #endregion Start log
 
-
+#region start Feature install
  Import-Module ServerManager
  f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Install Feature:`'$($FeatureChoice)`'"
- Install-WindowsFeature -name $FeatureChoice -ErrorAction Continue -ErrorVariable ProcessError
+ Install-WindowsFeature -name $FeatureChoice -ErrorAction SilentlyContinue -ErrorVariable ProcessError
+ Write-host "$ProcessError" 
  If ($ProcessError) {
      f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Failure Install Feature:`'$($FeatureChoice)`'"
+}  Else{
+     f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'Ready"
 }
-
- f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'Ready"
-
+#endregion start Feature install
+ 
 #region end log
         f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
 #endregion End Log
