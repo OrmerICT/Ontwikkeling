@@ -134,6 +134,7 @@ remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 }  Else{
      f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'Ready"
 }
+    Get-WindowsFeature $FeatureChoice | Write-host $FeatureChoice
 #endregion start Feature install
  
 #region end log
