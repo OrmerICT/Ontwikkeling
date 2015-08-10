@@ -1,16 +1,17 @@
 ﻿[cmdletbinding()]
 param (
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$Operator,
 
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$MachineGroep,
 
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$TDNumber,
 
     [parameter(mandatory=$true)]
-    [string]$KworkingDir
+    [ValidateScript({Test-Path $_})]
+    [string]$KworkingDir    
 )
 
 #region StandardFramework
