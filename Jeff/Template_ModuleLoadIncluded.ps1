@@ -52,11 +52,11 @@ $logvar = New-Object -TypeName PSObject -Property @{
 }
 
 Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
-New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir  -ErrorAction Stop -Message "Starting procedure: $($procname)"
+New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -ErrorAction Stop -Message "Starting procedure: $($procname)"
 #endregion StandardFramework
     
 #region Execution
 
-New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir  -ErrorAction Stop -Message "Hello World!"
+New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -ErrorAction Stop -Message "Hello World!"
     
 #endregion Execution
