@@ -3,12 +3,12 @@
   param (
     [datetime]$DateTime
   )
-  if (([system.timezone]::CurrentTimeZone).StandardName -ne 'W. Europe Standard Time') {
-    $TimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById('W. Europe Standard Time')
-    [System.TimeZoneInfo]::ConvertTimeFromUtc($DateTime, $TimeZone)
+  $TimeZoneInfo = [System.TimeZoneInfo]::FindSystemTimeZoneById('W. Europe Standard Time')
+  $CurrentTimeZone = [system.timezone]::CurrentTimeZone
+  if ($CurrentTimeZone.StandardName -ne $TimeZoneInfo.StandardName) {    
+    [System.TimeZoneInfo]::ConvertTimeFromUtc($DateTime.ToUniversalTime(), $TimeZoneInfo)
   }
-  else
-  {
+  else{
     $DateTime
   }
 }

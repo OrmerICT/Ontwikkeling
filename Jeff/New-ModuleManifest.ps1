@@ -1,7 +1,7 @@
 #region OrmLogging
-New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff\Modules\OrmLogging\OrmLogging.psd1' `
+New-ModuleManifest -Path 'C:\Users\cdekk\Documents\GitHub\Ontwikkeling\Jeff\Modules\OrmLogging\OrmLogging.psd1' `
 -FunctionsToExport @(
-    'Format-OrmLogDateTime',
+    'Format-LogDateTime',
     'New-Log'
 ) `
 -Guid $([GUID]::NewGuid().Guid) `
@@ -15,7 +15,7 @@ New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff
 #endregion OrmLogging
 
 #region OrmAzure
-New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff\Modules\OrmAzure\OrmAzure.psd1' `
+New-ModuleManifest -Path 'C:\Users\cdekk\Documents\GitHub\Ontwikkeling\Jeff\Modules\OrmAzure\OrmAzure.psd1' `
 -FunctionsToExport @(
     'Update-AzurevNetConfig',
     'Test-AzureLogon',
@@ -42,7 +42,7 @@ New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff
 #endregion OrmAzure
 
 #region OrmToolkit
-New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff\Modules\OrmToolkit\OrmToolkit.psd1' `
+New-ModuleManifest -Path 'C:\Users\cdekk\Documents\GitHub\Ontwikkeling\Jeff\Modules\OrmToolkit\OrmToolkit.psd1' `
 -FunctionsToExport @(
     'ConvertTo-WEuropeStandardTime',
     'ConvertTo-Epoch',
@@ -59,7 +59,7 @@ New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff
 #endregion OrmToolkit
 
 #region OrmWSUS
-New-ModuleManifest -Path 'D:\Methos\Customers\Ormer ICT\GitHub\Ontwikkeling\Jeff\Modules\OrmWSUS\OrmWSUS.psd1' `
+New-ModuleManifest -Path 'C:\Users\cdekk\Documents\GitHub\Ontwikkeling\Jeff\Modules\OrmWSUS\OrmWSUS.psd1' `
 -FunctionsToExport @(
     'Clean-WSUS'
 ) `

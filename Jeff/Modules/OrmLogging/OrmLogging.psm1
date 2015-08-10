@@ -1,21 +1,4 @@
-﻿function ConvertTo-WEuropeStandardTime
-{
-  param (
-    [datetime]$DateTime
-  )
-  $TimeZoneInfo = [System.TimeZoneInfo]::FindSystemTimeZoneById('W. Europe Standard Time')
-  $CurrentTimeZone = [system.timezone]::CurrentTimeZone
-  if ($CurrentTimeZone.StandardName -ne $TimeZoneInfo.StandardName) {    
-    [System.TimeZoneInfo]::ConvertTimeFromUtc($DateTime.ToUniversalTime(), $TimeZoneInfo)
-  }
-  else{
-    $DateTime
-  }
-}
-
-Export-ModuleMember -Function 'ConvertTo-WEuropeStandardTime'
-
-function Format-OrmLogDateTime
+﻿function Format-LogDateTime
 {
   param (
     [datetime]$DateTime
@@ -65,7 +48,7 @@ function Format-OrmLogDateTime
     Return $TimeArray
 }
 
-Export-ModuleMember -Function 'Format-OrmLogDateTime'
+Export-ModuleMember -Function 'Format-LogDateTime'
 
 function New-Log {
     [cmdletbinding()]

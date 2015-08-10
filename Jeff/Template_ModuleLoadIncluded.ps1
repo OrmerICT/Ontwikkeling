@@ -12,8 +12,10 @@ param (
     [parameter(mandatory=$true)]
     [string]$KworkingDir
 )
-Import-module OrmLogging
+
 #region StandardFramework
+Import-module OrmLogging -ErrorAction Stop
+Import-Module OrmToolkit -ErrorAction Stop
 Set-Location $KworkingDir
     
 $Domain = $env:USERDOMAIN
