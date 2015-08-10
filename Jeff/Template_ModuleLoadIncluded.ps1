@@ -14,13 +14,13 @@ param (
 )
 
 #region StandardFramework
-Import-module OrmLogging -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmLoggingError
+Import-Module -Name OrmLogging -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmLoggingError
 if($ImportModuleOrmLoggingError)
 {
     Write-Error "Unable to import the Ormer Logging Powershell Module"
     Break
 }
-Import-Module OrmToolkit -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmToolkitError
+Import-Module -Name OrmToolkit -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmToolkitError
 if($ImportModuleOrmLoggingError)
 {
     Write-Error "Unable to import the Ormer Toolkit Powershell Module"
@@ -37,25 +37,25 @@ if($ImportModuleOrmLoggingError)
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
 $GetProcName = Get-PSCallStack
-$procname = $GetProcname.Command
+$Procname = $GetProcname.Command
 $Customer = $MachineGroep.Split('.')[2]
 
 
 $logvar = New-Object -TypeName PSObject -Property @{
     'Domain' = $Domain 
     'MachineName' = $MachineName
-    'procname' = $procname
+    'Procname' = $Procname
     'Customer' = $Customer
     'Operator'= $Operator
     'TDNumber'= $TDNumber
 }
 
 Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
-New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -Message "Starting procedure: $($procname)"
+New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir  -ErrorAction Stop -Message "Starting procedure: $($procname)"
 #endregion StandardFramework
     
 #region Execution
 
-New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -Message "Hello World!"
+New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir  -ErrorAction Stop -Message "Hello World!"
     
 #endregion Execution
