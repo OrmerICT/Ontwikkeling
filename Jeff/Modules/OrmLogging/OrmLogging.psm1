@@ -65,7 +65,7 @@ function New-Log {
     $LogFile= "$($LogDir)\ProcedureLog.log"
     try 
     {
-        $DateTime = ConvertTo-WEuropeStandardTime -DateTime (Get-Date)
+        $DateTime = ConvertTo-OrmWEuropeStandardTime -DateTime (Get-Date)
         $FormattedDateTime = Format-OrmLogDateTime -DateTime $DateTime
         $LogDate = $FormattedDateTime[0]
         $LogTime = $FormattedDateTime[1]
@@ -75,6 +75,7 @@ function New-Log {
     catch
     {
         Write-Error -Message 'Unable to generate OrmLog'
+        Write-Error -Message "$($_.Exception.Message)"
     }
 }
 
