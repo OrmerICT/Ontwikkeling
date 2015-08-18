@@ -1,144 +1,188 @@
-﻿###############################################################################
-#   Ormer LEGAL STATEMENT FOR SAMPLE SCRIPTS/CODE
-###############################################################################
-<#
-#******************************************************************************
-# File:     Add_WindowsFeature.ps1
-# Date:     07/30/2015
-# Version:  0.3
-#
-# Purpose:  PowerShell script to add a new Feature to a Windows server(s).
-#
-# Usage:    Add_WindowsFeature.ps1
-# Needed: Remote administration tools to add a new Feature to a Windows server(s)
-#
-# Copyright (C) 2015 Ormer ICT 
-# https://social.technet.microsoft.com/forums/windowsserver/en-US/26cc0a4e-306c-4a95-8313-ad6c09120e59/powershell-eindows-form-drop-down-selection
-# Revisions:
-# ----------
-# 0.1.0   07/28/2015   Created script. (By PvdW)
-# 0.2.0   07/30/2015   Updated script. (By PvdW)
-# 0.3.0   07/31/2015   Updated script. Remove inputbox. Input nu via Kaseya (By PvdW)
-#    
-#>#******************************************************************************
-#region Start Parameters
+﻿<#
+.Synopsis
+   The Ormer template for all PowerShell Scripts.
+.DESCRIPTION
+   The Ormer template for all PowerShell Scripts that are executed using a Kaseya Procedure.
+   The template includes all requirements for scripts and logging.
+.EXAMPLE
+   Example of how to use this script
+.EXAMPLE
+   Another example of how to use this script
+.NOTES
+   Author: Managed Services
+   Version: 1.0
+   Revisions:
+   01/01/2015 - Created Template. (Managed Services)
+#>
+
 [cmdletbinding()]
 param (
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$Operator,
 
-    [parameter(mandatory=$false)]
-    [string]$MachineGroep,
+    [parameter(mandatory=$true)]
+    [string]$MachineGroup,
 
-    [parameter(mandatory=$false)]
+    [parameter(mandatory=$true)]
     [string]$TDNumber,
 
     [parameter(mandatory=$true)]
-    [string]$FeatureChoice,
+    [ValidateScript({Test-Path $_})]
+    [string]$KworkingDir,
     
-    #[parameter(mandatory=$false)]
-    #[string]$Procname,
-
     [parameter(mandatory=$true)]
-    [string]$KworkingDir
-
-#Procedure Vars
-#    [parameter(mandatory=$true)]
-#    [string]$UserName
+    [string]$FeatureChoice 
 )
-#endregion Start Parameters
 
-start-transcript -path c:\windows\temp\transcriptlog.txt 
-
-#region Function Show-Usage
-function Show-Usage()
+#region Functions
+function Get-OSDetails()
 {
-$usage = @'
-Add-Font.ps1
-This script is used to Add Windows Features.
+    $OS =Get-WmiObject -class Win32_OperatingSystem
 
-Usage:
+    $OSDetails = New-Object -TypeName PSObject -Property @{
+        'Caption' = $OS.Caption
+        'FullVersion' = $OS.Version 
+        'MajorVersion' = [int]$OS.Version.ToString().Split('.')[0]
+        'MinorVersion' = [int]$OS.Version.ToString().Split('.')[1]
+        'BuildVersion' = [int]$OS.Version.ToString().Split('.')[2]      
+        'Type' = ''
+        'Architecture' = $OS.OSArchitecture
+    }
 
-Help:
-Add_WindowsFeature.ps1 -help 
-
-Install/Add:
-Add_WindowsFeature.ps1 -kworking -TDnumber -FeatureChoice
-
-Parameters:
-
-    -help
-     Displays usage information.
-
-Examples:
-    
-'@
-
-$usage
-}
-#endregion Function Show-Usage
-
-#region Function Process-Arguments
-function Process-Arguments()
-{
-    ## Write-host 'Processing Arguments'
-
-    if ($unnamedArgs.Length -gt 0)
+    if($OS.ProductType -gt 1)
     {
-        #write-host "The following arguments are not defined:"
-        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message 'The following arguments are not defined:'
-        $unnamedArgs
+        $OSDetails.Type = "Server"
     }
-
-    if ($help -eq $true) 
-    { 
-        Show-Usage
-        break
+    else
+    {
+        $OSDetails.Type = "Client"
     }
+    Return $OSDetails
 }
-#endregion Function Process-Arguments
-	
+#endregion
 
 #region StandardFramework
-Set-Location $KworkingDir
+Import-Module -Name OrmLogging -Prefix 'Orm' -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmLoggingError
+if($ImportModuleOrmLoggingError)
+{
+    Write-Error "Unable to import the Ormer Logging Powershell Module"
+    Write-Error "$($ImportModuleOrmLoggingError.Exception.Message)"
+    Break
+}
+Import-Module -Name OrmToolkit -Prefix 'Orm' -ErrorAction SilentlyContinue -ErrorVariable ImportModuleOrmToolkitError
+if($ImportModuleOrmToolkitError)
+{
+    Write-Error "Unable to import the Ormer Toolkit Powershell Module"
+    Write-Error "$($ImportModuleOrmToolkitError.Exception.Message)"
+    Break
+}
+
+Set-Location $KworkingDir -ErrorAction SilentlyContinue -ErrorVariable SetLocationError
+if($SetLocationError)
+{
+    Write-Error "Unable to set the working directory of the script"
+    Write-Error "$($SetLocationError.Exception.Message)"
+    Break
+}
     
-. .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
 $Procname = $MyInvocation.MyCommand.Name
-$Customer = $MachineGroep.Split(“.”)[2]
+$Customer = $MachineGroup.Split('.')[2]
 
 $logvar = New-Object -TypeName PSObject -Property @{
     'Domain' = $Domain 
     'MachineName' = $MachineName
-    'procname' = $procname
+    'Procname' = $Procname
     'Customer' = $Customer
     'Operator'= $Operator
     'TDNumber'= $TDNumber
 }
 
-remove-item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
+Remove-Item "$KworkingDir\ProcedureLog.log" -Force -ErrorAction SilentlyContinue
 #endregion StandardFramework
     
-#region Start log
-    f_New-Log -logvar $logvar -status 'Start' -LogDir $KworkingDir -Message "Title:`'$($Procname)`'Script"
-#endregion Start log
+#region Execution
+New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -ErrorAction Stop -Message "Starting procedure: $($procname)"
 
-#region start Feature install
- Import-Module ServerManager -Force 
- f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Install Feature:`'$($FeatureChoice)`'"
- Get-WindowsFeature $FeatureChoice
- Add-WindowsFeature $FeatureChoice -ErrorAction Continue -ErrorVariable ProcessError
- Write-host "$ProcessError" 
- If ($ProcessError) {
-     f_New-Log -logvar $logvar -status 'Error' -LogDir $KworkingDir -Message "Failure Install Feature:`'$($FeatureChoice)`'"
-}  Else{
-     f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "Add Feature:`'$($FeatureChoice)`'Ready"
+#check the OS Details to determine if the procedure should continue
+$OSDetails = Get-OSDetails
+
+if($OSDetails.Type -eq "Server")
+{ 
+    if($OSDetails.MajorVersion -eq 6 -and $OSDetails.MinorVersion -eq 1)
+    {
+        #supported for Add-WindowsFeature (Server 2008 R2)
+        $AddWindowsFeature = $true
+    }
+    else
+    {
+        if($OSDetails.MajorVersion -ge 6 -and $OSDetails.MinorVersion -gt 0)
+        {
+            #supported for Install-WindowsFeature (Server 2012+)
+            $InstallWindowsFeature = $true
+        }
+        else
+        {
+            New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "Unsupported OS: $($OSDetails.Caption)"
+            New-OrmLog -logvar $logvar -Status 'Failure' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure failed: $($procname)" 
+            Break
+        } 
+    }        
+} 
+
+#Import the ServerManager Module
+New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Importing the ServerManager Module..."
+Import-Module ServerManager -Force -ErrorAction SilentlyContinue -ErrorVariable ImportModuleError
+if (!($ImportModuleError))
+{
+    New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "ServerManager Module Succesfully Imported"      
+}  
+else
+{
+    New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message "Failed to Import the ServerManager Module. The following error occured:"
+    New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message "$($ImportModuleError.Message):"
+    New-OrmLog -logvar $logvar -Status 'Failure' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure failed: $($procname)"
+    Break    
+} 
+
+#check if the feature is already installed
+New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Checking if $($FeatureChoice) is already installed..."
+$Feature = Get-WindowsFeature -Name $FeatureChoice
+
+if($Feature -eq $null)
+{
+    New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message "$($FeatureChoice) is not a valid feature name"
+    New-OrmLog -logvar $logvar -Status 'Failure' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure failed: $($procname)"
 }
-    Get-WindowsFeature $FeatureChoice
-#endregion start Feature install
- 
-#region end log
-        f_New-Log -logvar $logvar -status 'Info' -LogDir $KworkingDir -Message "END Title:`'$($Procname)`'Script"
-#endregion End Log
-Stop-transcript #-path c:\windows\temp\transcriptlog.txt
+
+if($Feature.Installed -eq $true)
+{
+     New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Feature $($Feature.Name) already installed."
+     New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure completed: $($procname)"   
+}
+else
+{
+    New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Installing Feature:$($FeatureChoice)."
+    if($InstallWindowsFeature -eq $true)
+    {
+        Install-WindowsFeature -Name $FeatureChoice -IncludeAllSubFeature -IncludeManagementTools -ErrorAction SilentlyContinue -ErrorVariable InstallWindowsFeatureError
+    }
+
+    if($AddWindowsFeature -eq $true)
+    {
+        Add-WindowsFeature -Name $FeatureChoice -IncludeAllSubFeature -ErrorAction SilentlyContinue -ErrorVariable InstallWindowsFeatureError
+    }
+    if(!($InstallWindowsFeatureError))
+    {
+        New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Feature:$($FeatureChoice) installed succesfully."
+        New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure completed: $($procname)"
+    }
+    else
+    {
+        New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message "An error occured when installing feature:$($FeatureChoice). The following error occured:"
+        New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message $InstallWindowsFeatureError.Exception.Message
+        New-OrmLog -logvar $logvar -Status 'Failure' -LogDir $KworkingDir -ErrorAction Stop -Message "Procedure failed: $($procname)"
+    }
+}
+#endregion Execution
