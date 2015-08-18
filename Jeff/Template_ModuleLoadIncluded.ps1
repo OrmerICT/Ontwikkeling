@@ -37,8 +37,7 @@ if($ImportModuleOrmLoggingError)
     
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
-$GetProcName = Get-PSCallStack
-$Procname = $GetProcname.Command
+$Procname = $MyInvocation.MyCommand.Name
 $Customer = $MachineGroep.Split('.')[2]
 
 

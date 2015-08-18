@@ -1,4 +1,4 @@
-[cmdletbinding()]
+﻿[cmdletbinding()]
 param (
     [parameter(mandatory=$false)]
     [string]$Operator,
@@ -25,8 +25,7 @@ Set-Location $KworkingDir
 . .\WriteLog.ps1
 $Domain = $env:USERDOMAIN
 $MachineName = $env:COMPUTERNAME
-$GetProcName = Get-PSCallStack
-$procname = $GetProcname.Command
+$Procname = $MyInvocation.MyCommand.Name
 $Customer = $MachineGroep.Split('.')[2]
 
 
