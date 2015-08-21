@@ -146,7 +146,7 @@ else
     Break    
 } 
 
-#check if the feature is already installed
+#check if the Windows Feature is already installed
 New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Checking if $($FeatureChoice) is already installed..."
 $Feature = Get-WindowsFeature -Name $FeatureChoice
 
@@ -163,6 +163,7 @@ if($Feature.Installed -eq $true)
 }
 else
 {
+    #install the Windows Feature
     New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Installing Feature:$($FeatureChoice)."
     if($InstallWindowsFeature -eq $true)
     {
