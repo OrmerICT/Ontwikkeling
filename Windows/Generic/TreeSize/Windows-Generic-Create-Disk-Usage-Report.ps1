@@ -441,7 +441,7 @@ function buildDirectoryTree_Recursive {
     if ($currentDirInfo.Length -gt 248)
     {
         New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "$currentDirInfo has a length of $($currentDirInfo.Length), greater than the maximum 248, invoking workaround"
-        $substDriveLetter = Get-ChildIt function:[d-z]: -n | Where-Object { !(test-path $_) } | Select-Object -First 1
+        $substDriveLetter = Get-ChildItem function:[d-z]: -n | Where-Object { !(test-path $_) } | Select-Object -First 1
         $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf("\")))
         $relative = $substDriveLetter+($currentDirInfo.Substring($currentDirInfo.LastIndexOf("\")))
         New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Mapping $substDriveLetter to $parentFolder for access via $relative"
