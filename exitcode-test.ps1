@@ -96,6 +96,6 @@ New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -ErrorAction Sto
 
 New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "END title: $procname Script"
 
-exit 12345
+exit 1
 
 #endregion Execution
