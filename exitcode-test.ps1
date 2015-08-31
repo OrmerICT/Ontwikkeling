@@ -94,33 +94,6 @@ New-OrmLog -logvar $logvar -Status 'Start' -LogDir $KworkingDir -ErrorAction Sto
     
 #region Execution
 
-#region Windows Server 2008
-
-$Server2008 = [environment]::OSVersion | Select-Object -ExpandProperty Version | Where-Object {$_.Major -like "6" -and $_.Minor -like "0"}
-if ($Server2008)
-{
-    New-OrmLog -logvar $logvar -Status 'Error' -LogDir $KworkingDir -ErrorAction Stop -Message "Windows server 2008 detected, PowerShell Modules not supported"
-    New-OrmLog -logvar $logvar -Status 'Failure' -LogDir $KworkingDir -ErrorAction Stop -Message "END title: $procname Script"
-    Break
-}
-
-#endregion Windows Server 2008
-
-#region Load module Server manager
-
-New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Checking to see if the servermanager PowerShell module is installed"
-if (get-module -name servermanager -ErrorAction SilentlyContinue)
-{
-    New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "Adding servermanager PowerShell module"
-    import-module servermanager
-}
-else
-{
-    New-OrmLog -logvar $logvar -Status 'Info' -LogDir $KworkingDir -ErrorAction Stop -Message "servermanager PowerShell module is Already loaded"
-}
-
-#endregion Load module Server manager
-
 New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "END title: $procname Script"
 
 exit 12345
