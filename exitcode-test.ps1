@@ -46,11 +46,7 @@ param (
     [string]$TDNumber,
 
     [parameter(mandatory=$true)]
-    [string]$KworkingDir,
-
-    # Procedure vars
-    [Parameter(Mandatory=$true)]
-    [String] $UserName
+    [string]$KworkingDir
 )
 
 #region StandardFramework
@@ -125,9 +121,8 @@ else
 
 #endregion Load module Server manager
 
-
-
 New-OrmLog -logvar $logvar -Status 'Success' -LogDir $KworkingDir -ErrorAction Stop -Message "END title: $procname Script"
 
 exit 12345
+
 #endregion Execution
