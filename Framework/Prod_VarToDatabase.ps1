@@ -8,7 +8,7 @@ param (
   #region Begin
     $LogFilePath = "C:\kworking\ProcedureLog.log"
     $ServerInstance = 'tcp:hljcmewuql.database.windows.net,1433'
-    $Database = 'Scriptlog'
+    $Database = 'Temp'
     $UserName = 'OrmerDB@hljcmewuql'
     $Password = 'Welkom2015!'
     $QueryTimeout = 600
@@ -45,7 +45,7 @@ param (
       $Split = $Line -split '\[' -replace '\]'
 
       $var = New-Object -TypeName PSObject -Property @{
-        'Date' = $split[1]
+        'DateTime' = $split[1].Replace("-","/") + " " + $Split[2]
         'Time' = $Split[2]
         'Operator' = $Split[3]
         'Domain' = $Split[4]
@@ -59,9 +59,8 @@ param (
          } # end split record to Var
 
         $Query = "insert into Logging 
-                  (Date,Time,Operator,Domain,MachineName,Customer,TDNumber,Procname,Status,Message) 
-                  values ('$($Var.Date)',
-                          '$($Var.Time)',
+                  (DateTime,Operator,Domain,MachineName,Customer,TDNumber,Procname,Status,Message) 
+                  values (Convert(datetime2,`'$($Var.DateTime)`',103),                          
                           '$($Var.Operator)',
                           '$($Var.Domain)',
                           '$($Var.MachineName)',
