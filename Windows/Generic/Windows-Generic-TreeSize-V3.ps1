@@ -4,13 +4,13 @@ param (
     [ValidateNotNullorEmpty()]
     [ValidateScript(
     {
-        if($_ -eq "All")
+        if($_ -eq 'All')
         {
             Return $true
         }
         else        
         {
-            $paths = $_.Split(",")
+            $paths = $_.Split(',')
             if($paths.Count -gt 1)        
             {
                foreach ($path in $paths)
@@ -69,15 +69,15 @@ function Get-DirectoryTree {
     if ($currentDirInfo.Length -gt 248)
     {
         Write-Host "$currentDirInfo has a length of $($currentDirInfo.Length), greater than the maximum 248, invoking workaround"
-        Write-Host "Searching for the first parent folder that is less than 248 characters..."
+        Write-Host 'Searching for the first parent folder that is less than 248 characters...'
         $substDriveLetter = Get-ChildItem function:[d-z]: -Name | Where-Object { !(Test-Path $_) } | Select-Object -First 1
-        $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf("\")))
-        $relative = $currentDirInfo.Substring($currentDirInfo.LastIndexOf("\"))
+        $parentFolder = ($currentDirInfo.Substring(0,$currentDirInfo.LastIndexOf('\')))
+        $relative = $currentDirInfo.Substring($currentDirInfo.LastIndexOf('\'))
         #account for cases where even the lenght of the parent folder of the parent folder exceeds the 248-character limit
         while ($parentFolder.Length -gt 248)
         {            
-            $relative = ($parentFolder.Substring($parentFolder.LastIndexOf("\")))+$relative
-            $parentFolder = ($parentFolder.Substring(0,$parentFolder.LastIndexOf("\")))           
+            $relative = ($parentFolder.Substring($parentFolder.LastIndexOf('\')))+$relative
+            $parentFolder = ($parentFolder.Substring(0,$parentFolder.LastIndexOf('\')))           
         }
         $relative = $substDriveLetter+($relative)
         
@@ -97,12 +97,12 @@ function Get-DirectoryTree {
     $DirectoryTreeObject.Folders = @()
     $DirectoryTreeObject.SizeBytes = 0;
     $DirectoryTreeObject.Name = $dirInfo.Name;
-    $DirectoryTreeObject.Type = "Folder";
+    $DirectoryTreeObject.Type = 'Folder';
     
     # iterate all subdirectories
     try
     {        
-        $dirs = $dirInfo.GetDirectories() | where {!$_.Attributes.ToString().Contains("ReparsePoint")}; #don't include reparse points
+        $dirs = $dirInfo.GetDirectories() | where {!$_.Attributes.ToString().Contains('ReparsePoint')}; #don't include reparse points
         $files = $dirInfo.GetFiles();
         # remove any drive mappings created via subst above
         if (!($substDriveLetter -eq $null))
@@ -120,7 +120,7 @@ function Get-DirectoryTree {
                 return;
             }
             # call this function in the subfolder. It will return after the entire branch from here down is traversed
-            Get-DirectoryTree -DirectoryTreeObject $subFolder -CurrentDirInfo ($currentDirInfo + "\" + $_.Name)            
+            Get-DirectoryTree -DirectoryTreeObject $subFolder -CurrentDirInfo ($currentDirInfo + '\' + $_.Name)            
             # add the subfolder object to the list of folders at this level
             $DirectoryTreeObject.Folders += $subFolder
             # the total size consumed from the subfolder down is now available. 
@@ -146,7 +146,7 @@ function Get-DirectoryTree {
     {
         if ($_.Exception.Message.StartsWith('Access to the path'))
         {
-            $DirectoryTreeObject.Name = $DirectoryTreeObject.Name + " (Access Denied to this location)"
+            $DirectoryTreeObject.Name = $DirectoryTreeObject.Name + ' (Access Denied to this location)'
         }
         else
         {
@@ -181,7 +181,7 @@ function Format-DirectoryTreeAsXML
     )    
 
     [xml]$xml = New-Object -TypeName System.Xml.XmlDocument
-    $XMLRoot = $XMLRoot.Replace("\","-").Replace(":","")
+    $XMLRoot = $XMLRoot.Replace('\','-').Replace(':','')
     $xml.AppendChild($xml.CreateXmlDeclaration('1.0', 'utf-8', $null)) | Out-Null
     $xml.AppendChild( ($xmlRootElement = $xml.CreateElement($XMLRoot))) | Out-Null
 
@@ -204,21 +204,21 @@ function Format-DirectoryTreeAsXML
                 #If the $NumberOfFilesToIncludePerFolder variable is set to -1, include all files.
                 if($i -lt $NumberOfFilesToIncludePerFolder -or $NumberOfFilesToIncludePerFolder -eq -1)
                 {
-                    $nel = $xml.CreateElement("file")
+                    $nel = $xml.CreateElement('file')
                     $nelfile = $XMLElement.AppendChild($nel)
-                    $nel.SetAttribute("name", $files[$i].Name)
-                    $nel.SetAttribute("size", $files[$i].SizeBytes)
-                    $nel.SetAttribute("extension", $files[$i].Extension)
-                    $nel.SetAttribute("modified", $files[$i].Modified)
-                    $nel.SetAttribute("created", $files[$i].Created)
+                    $nel.SetAttribute('name', $files[$i].Name)
+                    $nel.SetAttribute('size', $files[$i].SizeBytes)
+                    $nel.SetAttribute('extension', $files[$i].Extension)
+                    $nel.SetAttribute('modified', $files[$i].Modified)
+                    $nel.SetAttribute('created', $files[$i].Created)
                 }
 
                 if($i -eq $NumberOfFilesToIncludePerFolder)
                 {
-                    $nel = $xml.CreateElement("file")
+                    $nel = $xml.CreateElement('file')
                     $nelfile = $XMLElement.AppendChild($nel)
-                    $nel.SetAttribute("name", "Additional files hidden by file count filter")
-                    $nel.SetAttribute("size", 0)
+                    $nel.SetAttribute('name', 'Additional files hidden by file count filter')
+                    $nel.SetAttribute('size', 0)
                 }
             }
         }
@@ -240,36 +240,36 @@ function Format-DirectoryTreeAsXML
             {                
                 if($CurrentFolderDepth -eq $FolderDepthThreshold)
                 {
-                    $nel = $xml.CreateElement("folder")
+                    $nel = $xml.CreateElement('folder')
                     $neldir = $XMLElement.appendChild($nel)
-                    $nel.SetAttribute("name", $folders[$i].Name)
-                    $nel.SetAttribute("size", $folders[$i].SizeBytes)
-                    $nel = $xml.CreateElement("file")
+                    $nel.SetAttribute('name', $folders[$i].Name)
+                    $nel.SetAttribute('size', $folders[$i].SizeBytes)
+                    $nel = $xml.CreateElement('file')
                     $nelfile = $neldir.AppendChild($nel)
-                    $nel.SetAttribute("name", "(Folder content hidden by folder depth threshold)")
-                    $nel.SetAttribute("size", 0)                   
+                    $nel.SetAttribute('name', '(Folder content hidden by folder depth threshold)')
+                    $nel.SetAttribute('size', 0)                   
                 }
                 #Hide the contents of the winsxs folder, as it contains files that are hardlinked in other locations in the filesystem.
                 #Additionaly, the winsxs folder cannot be cleaned, so reporting files and their sizes makes no sense.                
-                elseif($folders[$i].Name -eq "winsxs")
+                elseif($folders[$i].Name -eq 'winsxs')
                 {
-                    $nel = $xml.CreateElement("folder")
+                    $nel = $xml.CreateElement('folder')
                     $neldir = $XMLElement.appendChild($nel)
-                    $nel.SetAttribute("name", $folders[$i].Name)
-                    $nel.SetAttribute("size", $folders[$i].SizeBytes)
-                    $nel = $xml.CreateElement("file")
+                    $nel.SetAttribute('name', $folders[$i].Name)
+                    $nel.SetAttribute('size', $folders[$i].SizeBytes)
+                    $nel = $xml.CreateElement('file')
                     $nelfile = $neldir.AppendChild($nel)
-                    $nel.SetAttribute("name", "(Contents of folder hidden as [$($folders[$i].Name)] commonly contains tens of thousands of files)")
-                    $nel.SetAttribute("size", 0)
+                    $nel.SetAttribute('name', "(Contents of folder hidden as [$($folders[$i].Name)] commonly contains tens of thousands of files)")
+                    $nel.SetAttribute('size', 0)
                 }
                 #Only include the folders who's size exceeds the $FolderSizeThresholdInBytes variable.
                 #If the $FolderSizeThresholdInBytes variable is set to -1, include all folders.
                 elseif($folders[$i].SizeBytes -gt $FolderSizeThresholdInBytes)
                 {             
-                    $nel = $xml.CreateElement("folder")
+                    $nel = $xml.CreateElement('folder')
                     $neldir = $XMLElement.appendChild($nel)
-                    $nel.SetAttribute("name", $folders[$i].Name)
-                    $nel.SetAttribute("size", $folders[$i].SizeBytes)
+                    $nel.SetAttribute('name', $folders[$i].Name)
+                    $nel.SetAttribute('size', $folders[$i].SizeBytes)
 
                     #Recursively call the current function until the directory tree is traversed to the final folder depth, or until the folder depth threshold is reached
                     Save-XMLDirectoryStructure -XMLElement $neldir -DirectoryTree $folders[$i]
@@ -277,14 +277,14 @@ function Format-DirectoryTreeAsXML
                 #Hide the content of folders who's size is below the $FolderSizeThresholdInBytes variable.                
                 else
                 {
-                    $nel = $xml.CreateElement("folder")
+                    $nel = $xml.CreateElement('folder')
                     $neldir = $XMLElement.appendChild($nel)
-                    $nel.SetAttribute("name", $folders[$i].Name)
-                    $nel.SetAttribute("size", $folders[$i].SizeBytes)
-                    $nel = $xml.CreateElement("file")
+                    $nel.SetAttribute('name', $folders[$i].Name)
+                    $nel.SetAttribute('size', $folders[$i].SizeBytes)
+                    $nel = $xml.CreateElement('file')
                     $nelfile = $neldir.AppendChild($nel)
-                    $nel.SetAttribute("name", "(Folder content hidden by folder size filter)")
-                    $nel.SetAttribute("size", 0)
+                    $nel.SetAttribute('name', '(Folder content hidden by folder size filter)')
+                    $nel.SetAttribute('size', 0)
                 }      
             }
         }
@@ -294,21 +294,21 @@ function Format-DirectoryTreeAsXML
 }
 
 # passing in "ALL" means that all fixed disks are to be included in the report
-if ($PathsToProcess -eq "All")
+if ($PathsToProcess -eq 'All')
 {
-    $logicalDisks = Get-WmiObject WIN32_LogicalDisk -Filter "DriveType = 3"
+    $logicalDisks = Get-WmiObject WIN32_LogicalDisk -Filter 'DriveType = 3'
     foreach ($logicalDisk in $logicalDisks)
     {
-        $pathsArray += @($logicalDisk.DeviceID+"\")
-        $xmlFilenamesArray += @($logicalDisk.DeviceID.replace(":","_Drive"))           
+        $pathsArray += @($logicalDisk.DeviceID+'\')
+        $xmlFilenamesArray += @($logicalDisk.DeviceID.replace(':','_Drive'))           
     }  
 }
 else
 {
-    $pathsArray = $PathsToProcess.split(",")    
+    $pathsArray = $PathsToProcess.split(',')    
     foreach($path in $pathsArray)
     {
-        $xmlFilenamesArray += ,$path.Replace("\","-").Replace(":","")
+        $xmlFilenamesArray += ,$path.Replace('\','-').Replace(':','')
     }    
 }
 $xmlFilenamesArray
