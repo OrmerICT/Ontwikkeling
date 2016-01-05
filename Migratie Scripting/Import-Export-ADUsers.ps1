@@ -4,6 +4,9 @@
 	
 	.DESCRIPTION
 		Exports and Imports AD-users from and to the Users OU in Active Directory.
+		For the Export action, the script creates CSV-file [Export-Users.csv] in the specified Working Directory (by default, this is the users Desktop).
+		For the Import action, the script looks for CSV-file [Export-Users.csv] in the specified Working Directory (by default, this is the users Desktop).
+		The result of the Import action is written to CSV-file [Result-Import-Users.csv] in the Working Directory.
 	
 	.PARAMETER Export
 		Switch that determines users in the Users OU are Exported to a CSV-file.
@@ -16,7 +19,7 @@
 	
 	.EXAMPLE
 		PS C:\> Import-Export-ADUsers.ps1 -Export
-
+	
 	.EXAMPLE
 		PS C:\> Import-Export-ADUsers.ps1 -Import
 	
@@ -33,8 +36,8 @@ param
 	[switch]$Import,
 	
 	[Parameter(Mandatory = $false)]
-	[ValidateScript({ Test-Path -Path $_ })]
 	[ValidateNotNullOrEmpty()]
+	[ValidateScript({ Test-Path -Path $_ })]
 	[string]$WorkingDirectory = "$($ENV:userprofile)\Desktop"
 )
 
